@@ -1,0 +1,10 @@
+{
+    "salmon_version": "1.9.0",
+    "geneMap": "genes.gtf",
+    "threads": "6",
+    "libType": "ISR",
+    "targets": "genome.transcripts.fa",
+    "alignments": "GMN-MUT3.Aligned.toTranscriptome.out.bam",
+    "output": "GMN-MUT3",
+    "auxDir": "aux_info"
+}

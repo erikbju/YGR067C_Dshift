@@ -1,0 +1,14 @@
+﻿Sample,Strain,Phase,Minimum_pool,Replicate
+E-MUT2,Mutant,Ethanol,No,2
+E-MUT3,Mutant,Ethanol,No,3
+E-WT2,Wildtype,Ethanol,No,2
+E-WT3,Wildtype,Ethanol,No,3
+G-MUT4,Mutant,Glucose,No,4
+G-MUT5,Mutant,Glucose,No,5
+G-WT3,Wildtype,Glucose,No,3
+G-WT4,Wildtype,Glucose,No,4
+G-WT5,Wildtype,Glucose,No,5
+GMN-MUT3,Mutant,Glucose,Yes,3
+GMN-WT1,Wildtype,Glucose,Yes,1
+GMN-WT2,Wildtype,Glucose,Yes,2
+GMN-WT3,Wildtype,Glucose,Yes,3

@@ -1,0 +1,13 @@
+Well	Plate_ID	Isolate	Comments	Group	Rep	Control
+A01	Combined_curves	BY4741	WT_Pre-shift	1	1	0
+A02	Combined_curves	BY4741	WT_Pre-shift	1	2	0
+A03	Combined_curves	BY4741	WT_Pre-shift	1	3	0
+A04	Combined_curves	YGR067C_ko	YGR067C_Pre-shift	2	1	0
+A05	Combined_curves	YGR067C_ko	YGR067C_Pre-shift	2	2	0
+A06	Combined_curves	YGR067C_ko	YGR067C_Pre-shift	2	3	0
+A07	Combined_curves	BY4741	WT_Post-shift	3	1	0
+A08	Combined_curves	BY4741	WT_Post-shift	3	2	0
+A09	Combined_curves	BY4741	WT_Post-shift	3	3	0
+A10	Combined_curves	YGR067C_ko	YGR067C_Post-shift	4	1	0
+A11	Combined_curves	YGR067C_ko	YGR067C_Post-shift	4	2	0
+A12	Combined_curves	YGR067C_ko	YGR067C_Post-shift	4	3	0

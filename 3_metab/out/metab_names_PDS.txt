@@ -1,0 +1,104 @@
+"Metabolite name"	"m/z similarity"	"l2fc"
+"1-(3-Chlorophenyl)piperazine"	"0.83"	-1.183545997691
+"13-HPODE"	"0.98"	1.40271864159871
+"2,7-Naphthalenedisulfonic acid"	"0.85"	1.1310104103773
+"2-Mercapto benzimidazole"	"0.96"	-1.29778331146427
+"3',5'-Cyclic AMP"	"1"	0.660713076225444
+"3,5-Dibromo-L-tyrosine"	"0.87"	-0.576377183333397
+"3-Phospho-D-glycerate"	"0.97"	-0.630275892601683
+"4-Hydroxybenzoylcholine"	"0.99"	-0.651722942817734
+"5-Fluorouracil"	"1"	-0.688374235091438
+"7-Hydroxyflavone"	"0.98"	1.0024955692989
+"8'-Apozeaxanthinal"	"1"	-0.593283823909034
+"Adenosine"	"0.89"	13.6937266209233
+"Adenosine 5'-diphospho-glucose"	"0.78"	1.86167078891265
+"Amarouciaxanthin A"	"0.69"	3.16481525256456
+"Aminopyrine"	"0.67"	0.812973707861987
+"Apigenin"	"1"	-1.54005049065474
+"Apramycin"	"0.8"	-0.653344354766641
+"Asparagine"	"0.98"	0.773194908346317
+"Aspartic acid"	"1"	-0.742834220610264
+"Atenolol-desisopropyl"	"0.63"	-1.02624804540265
+"Azithromycin"	"0.9"	-1.02806884461321
+"Baicalin"	"1"	1.9605063189854
+"Benzimidazole"	"1"	-1.13303515478782
+"Benzoylcholine"	"0.83"	0.400054267111028
+"Biotin"	"0.68"	-1.11859860956375
+"Boldenone_Undecylenate"	"0.85"	0.858004677436256
+"Bumetanide"	"0.77"	1.84370827440563
+"C60"	"0.94"	2.23611487016526
+"Caffeic acid"	"1.00"	0.427082561093047
+"Carbendazim"	"0.78"	3.9309814977076
+"Chlorogenic Acid"	"0.99"	0.86074149519128
+"Cholesterol"	"0.99"	-0.143943458598314
+"Cilastatin"	"0.91"	-2.0578656838119
+"Cochlioquinone A"	"0.99"	1.61330583777957
+"Crystal violet"	"0.99"	-1.10583170869261
+"Cyanidin-3-O-(2''-O-beta-xylopyranosyl-beta-glucopyranoside)-5-O-beta-glucopyranoside"	"0.7"	4.29717465944292
+"Cymarin"	"0.91"	1.44420527938044
+"Cymoxanil"	"0.87"	-1.32348748050946
+"Cystine"	"0.95"	-1.08191805153726
+"DErySphingosine"	"0.98"	-0.318981465518249
+"Dexamethasone"	"0.99"	0.428274443873574
+"Diazinon"	"0.83"	4.34531002089367
+"Drofenine"	"0.94"	-0.282157052704077
+"Enalaprilat"	"1"	-0.546092805919778
+"Fortunellin"	"0.85"	3.43645939530251
+"Fucoxanthin"	"0.83"	3.87518468857452
+"Gentiobiose"	"0.99"	-1.13194130064132
+"Glutamic acid"	"0.97"	1.73762486276577
+"Glycocyamine"	"1.00"	1.31805851155288
+"Harmine"	"0.88"	-0.274437755209024
+"Hesperidin"	"1"	3.3963641901942
+"Hesperidin methyl chalcone"	"0.98"	2.52245603104763
+"Hydrocortisone"	"0.98"	-0.743112411063144
+"Icariin"	"0.62"	1.28224663749029
+"Imazalil"	"0.61"	0.910320544581128
+"Indole-3-acetyl-L-aspartic acid"	"0.69"	-1.12101862976004
+"Iprovalicarb"	"0.93"	0.814850094626037
+"Irgarol"	"0.72"	-1.16401108486709
+"Kaempferide"	"0.99"	-1.42036397787101
+"Ketoconazole"	"1"	1.69209863526392
+"L-Anserine"	"0.81"	-0.586577051510514
+"Lactose"	"0.72"	2.57629679110775
+"Laudanosine"	"1"	0.821992489837296
+"Leu-Leu-Tyr"	"0.99"	-1.1418133025904
+"Leucine_Enkephalin"	"1"	-4.39554277594267
+"Levamisole"	"0.97"	1.95579989120666
+"Lincomycin"	"0.94"	1.83878045719958
+"Mactraxanthin"	"0.76"	0.284843374016067
+"Methotrexate"	"0.94"	2.46397033676255
+"Methoxyfenozide"	"0.95"	-1.32155998542719
+"Methylergonovine"	"0.97"	2.17375581351938
+"Metribuzin-diketo"	"0.76"	-1.42146243104563
+"Myxoxanthophyll"	"0.99"	2.45721086679519
+"N,N-Dimethylaniline"	"1"	-0.87623985642744
+"NAD+"	"0.81"	2.81903272160979
+"Naringin"	"0.71"	1.57804919791383
+"Nicosulfuron"	"0.68"	-0.479815653456813
+"Nicotinoylcholine"	"0.93"	0.832140466734277
+"Oseltamivir"	"0.92"	-0.925266753027943
+"Pethoxamide"	"1"	1.24506152569843
+"Phenmedipham"	"0.95"	0.321338267994869
+"Phenylalanine"	"0.86"	-1.06186651555949
+"Phosphatidylinositol 16"	"1.00"	1.09274933779855
+"Phosphatidylinositol 18"	"0.97"	-0.869793190042
+"Pirimicarb"	"0.76"	-1.22776931435983
+"Praziquantel"	"0.82"	-1.05721306428206
+"Prednisolone_Tebutate"	"1"	3.52291209333572
+"Prednisone"	"0.8"	-0.886689655052008
+"Propachlor ESA"	"0.76"	-0.454682291597923
+"Pyrroxanthin 5,8-furanoxide"	"0.7"	3.40538691996078
+"Rotenone"	"1"	1.61223566676673
+"Scopoletin"	"1"	1.79132129230998
+"Spectinomycin"	"0.77"	2.47238451420455
+"Syringaldehyde"	"0.85"	1.01511815790711
+"Taurocholate"	"0.94"	2.62525889388846
+"Temazepam"	"0.99"	-1.55259023333937
+"Triphenylphosphine oxid"	"0.99"	1.13642244409762
+"Tristealin"	"0.94"	0.894161727930843
+"Uridine"	"0.98"	1.24088081382172
+"Xanthohumol"	"0.72"	2.19171236375374
+"[6]-Gingerol"	"0.99"	-1.21132966696205
+"all-trans-Retinoic acid"	"0.89"	-1.31709062393357
+"delta-Decalactone"	"0.9"	-1.02523117970809

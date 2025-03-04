@@ -1,0 +1,911 @@
+---
+title: "YGR067C"
+author: "Erik Bjurström"
+date: "2023-03-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries}
+#Loads all the libraries needed for analysis
+library(DESeq2,warn.conflicts = F)
+library(tidyverse,warn.conflicts = F)
+library(RColorBrewer,warn.conflicts = F)
+library(pheatmap,warn.conflicts = F)
+library(DEGreport,warn.conflicts = F)
+library(tximport,warn.conflicts = F)
+library(ggplot2,warn.conflicts = F)
+library(ggrepel,warn.conflicts = F)
+#library(PCAtools)
+library(ashr)
+library(zoo)
+
+library(limma,warn.conflicts = F)
+library(knitr,warn.conflicts = F)
+library(edgeR,warn.conflicts = F)
+#library(gdata,warn.conflicts = F)
+library(snowfall,warn.conflicts = F)
+library(parallel,warn.conflicts = F)
+cores <- as.numeric(detectCores())
+library(piano,warn.conflicts = F)
+library(reshape2,warn.conflicts = F)
+library(grid,warn.conflicts = F)
+library(scales,warn.conflicts = F)
+library(enrichplot, warn.conflicts = F)
+# library(VennDetail, warn.conflicts = F)
+library(biomaRt)
+library(pathfindR)
+
+```
+
+
+
+```{r}
+# Imports all the R functions in this Rmd from subdir "R_scripts"
+file.sources = list.files("./R_scripts",pattern = "*.R",full.names = T)
+sapply(file.sources, source, .GlobalEnv)
+```
+
+```{r Extract count data}
+# Finds all folders in /data that ends with "salmon", i.e. the folders with the
+# quant.sf files which contains counts mapped to genes.
+samples <- list.files(path = "./data/EXP/", full.names = T, pattern = "[0-9]$")
+files <- file.path(samples, "quant.sf")
+
+# Names each entry in "files" to the sample name
+# e.g. ./data/T1_post.salmon/quant.sf -> T1_post
+names(files) <- str_replace(samples, "./data/EXP/","")
+
+# "salmon_tx2gene.tsv" contains the Gene_stable_ID and Gene_name of each gene
+tx2gene <- read.delim("./data/db/salmon_tx2gene.tsv", sep = "\t", quote = "")
+
+# Imports count data from each quant.sf and names each gene using 
+# "salmon_tx2gene.tsv"
+txi <- tximport(files, type="salmon", 
+                tx2gene = tx2gene[,c("tx_id", "ensgene", "symbol")], 
+                countsFromAbundance = "lengthScaledTPM",
+                importer = read.delim)
+# 
+# Rounds counts to integers 
+data <- txi$counts %>% 
+  round() %>% 
+  data.frame()
+```
+
+```{r Loads meta data}
+# Load sample info, used when contrasting samples using DESeq2
+meta <- read.csv("./EXP/Sample_info.csv", sep = ",", quote ="", 
+                 row.names = colnames(txi$counts)) %>% 
+                      dplyr::select(c("Strain", "Phase","Minimum_pool"))
+
+```
+
+```{r}
+# Verifies that all column names in the data matches the row names in the
+# metadata file
+
+all(colnames(txi$counts) %in% rownames(meta))
+all(colnames(txi$counts) == rownames(meta))
+```
+
+```{r DDS}
+# Create DESeq2Dataset object
+dds <- DESeqDataSetFromTximport(txi, colData = meta, design = ~Strain + Phase + Minimum_pool)
+dds$group <- factor(paste0(dds$Strain, dds$Phase, dds$Minimum_pool))
+design(dds) <- ~group
+dds <- estimateSizeFactors(dds)
+
+# Uses Median of Ratios method
+normalized_counts <- counts(dds, normalized = TRUE)
+not_normalized_counts <- counts(dds, normalized = F)
+```
+
+```{r Outlier removal}
+outliers = c("GMN-WT1", "GMN-WT2", "GMN-WT3", "GMN-MUT3", "G-WT5")
+files_clean <- files[!(names(files) %in% outliers)]
+
+txi_clean <- tximport(files_clean, type="salmon", 
+                tx2gene = tx2gene[,c("tx_id", "ensgene", "symbol")], 
+                countsFromAbundance = "lengthScaledTPM")
+
+meta_clean <- meta[!(rownames(meta) %in% outliers),]
+
+
+all(colnames(txi_clean$counts) %in% rownames(meta_clean))
+all(colnames(txi_clean$counts) == rownames(meta_clean))
+```
+
+```{r DDS}
+# Create DESeq2Dataset object
+dds <- DESeqDataSetFromTximport(txi_clean, colData = meta_clean, design = ~Strain + Phase + Strain:Phase)
+dds$group <- factor(paste0(dds$Strain, dds$Phase))
+design(dds) <- ~group
+dds <- estimateSizeFactors(dds)
+
+# Uses Median of Ratios method
+normalized_counts <- counts(dds, normalized = TRUE)
+not_normalized_counts <- counts(dds, normalized = F)
+```
+
+```{r}
+library(org.Sc.sgd.db)
+gene2desc <- org.Sc.sgdDESCRIPTION
+mapped_probes <- mappedkeys(gene2desc)
+gene2desc <- as.data.frame(gene2desc[mapped_probes])
+```
+
+```{r}
+tx2gene_adj <- tx2gene %>% subset(ensgene %in% gene2desc$systematic_name)
+gene_description <- merge(tx2gene_adj, gene2desc, by.x = "ensgene", by.y = "systematic_name") %>% dplyr::select(-tx_id) %>% dplyr::rename("Gene_stable_ID" = ensgene, "Gene_name" = symbol, "Description" = feature_description ) # MAke sure to write this to a file later
+
+normalized_counts_tb <- normalized_counts %>%
+  data.frame() %>%
+  rownames_to_column(var="Gene_stable_ID") %>% 
+  as_tibble()
+
+# Adds gene name and description to the normalized counts
+normalized_counts_nice <- nicefy_gene_results(normalized_counts_tb, gene_description)
+```
+
+
+```{r}
+# Script to save a table of unnormalized counts.
+raw_counts <- not_normalized_counts %>% as.data.frame()
+
+raw_counts_tb <- raw_counts %>%
+  data.frame() %>%
+  rownames_to_column(var="Gene_stable_ID") %>% 
+  as_tibble()
+
+# Adds gene name and description to the raw counts
+raw_counts_nice <- nicefy_gene_results(raw_counts_tb, gene_description)
+
+# write.table(raw_counts_nice, file = "./data/raw_counts.txt", 
+#            sep = "\t", quote = F, col.names = NA)
+
+```
+
+
+
+```{r}
+# To improve the distances/clustering for the PCA and heirarchical clustering visualization methods, we need to moderate the variance across the mean by applying the rlog transformation to the normalized counts.
+rld <- rlog(dds, blind = T)
+vsd <- vst(dds, blind=T)
+```
+
+```{r, echo=F}
+### Extract the rlog matrix from the object
+rld_mat <- assay(rld)
+
+### Compute pairwise correlation valuesxz
+rld_cor <- cor(rld_mat)
+
+## check the output of cor(), make note of the row names and column names
+head(rld_cor)
+head(meta_clean)
+```
+
+```{r}
+# Makes PCA plots of the rlog transformed normalized counts
+p <- pca(rld_cor, metadata = colData(rld), removeVar = 0.1)
+# scree <- screeplot(p, axisLabSize =18, titleLabSize = 22)
+
+PC1PC2 <- biplot(p,
+       colby = 'Phase',
+       shape = 'Strain',
+       legendPosition = 'right',
+       legendLabSize = 8,
+       legendIconSize = 5,
+       title = "PCA-plot")
+
+PC1PC4 <- biplot(p,
+       x = 'PC1',
+       y = 'PC4',
+       colby = 'Phase',
+       shape = 'Strain',
+       legendPosition = 'right',
+       legendLabSize = 8,
+       legendIconSize = 5) 
+
+PC2PC4 <- biplot(p,
+       x = 'PC2',
+       y = 'PC4',
+       colby = 'Phase',
+       shape = 'Strain',
+       legendPosition = 'right',
+       legendLabSize = 8,
+       legendIconSize = 5)
+
+PC1PC3 <- biplot(p,
+       x = 'PC1',
+       y = 'PC3',
+       colby = 'Phase',
+       shape = 'Strain',
+       legendPosition = 'right',
+       legendLabSize = 8,
+       legendIconSize = 5) 
+
+eigenc <- eigencorplot(p, metavars = c("Strain", "Phase"), main = "Eigencorplot")
+```
+
+
+```{r}
+# Heatmap of correlation matrix between samples. Note that this is mostly to
+# check for extreme outliers (corr < 0.8)
+hierarch <-  pheatmap(rld_cor, annotation = meta, 
+                      main = "Sample-wide hierarchical clustering")
+```
+
+```{r}
+# Runs DESeq2 on the dds object
+dds <- DESeq(dds)
+```
+
+```{r}
+# Plot of Dispersion estimates.
+# Good data should see a smooth decrease of dispersion as mean of norm counts
+# increases.
+plotDispEsts(dds)
+```
+
+```{r}
+# Makes result tables with contrasts, i.e. which groups do you want to compare?
+res_table_glucose <- results(dds, contrast = c("group", "MutantGlucose", 
+                                               "WildtypeGlucose"), alpha = 0.05)
+res_table_ethanol <- results(dds, contrast = c("group", "MutantEthanol",
+                                               "WildtypeEthanol"), alpha = 0.05)
+
+res_table_WT <- results(dds, contrast = c("group", "WildtypeEthanol",
+                                          "WildtypeGlucose"), alpha = 0.05)
+res_table_MUT <- results(dds, contrast = c("group", "MutantEthanol",
+                                           "MutantGlucose"), alpha = 0.05)
+
+# Prints a summary of the comparison
+summary(res_table_glucose, alpha = 0.05)
+# summary(res_table_ethanol, alpha = 0.05)
+# summary(res_table_WT, alpha = 0.05)
+# summary(res_table_MUT, alpha = 0.05)
+
+# Copies content of result table to see the effect of lfc-shrinkage methods
+res_table_glucose_unshrunken <- res_table_glucose
+# res_table_ethanol_unshrunken <- res_table_ethanol
+# res_table_WT_unshrunken <- res_table_WT
+# res_table_MUT_unshrunken <- res_table_MUT
+```
+
+
+```{r}
+# Performs lfc-shrinkage on the result tables using ashr
+res_table_glucose <- lfcShrink(dds, 
+                               contrast = c("group", "MutantGlucose", 
+                                            "WildtypeGlucose"), type ="ashr")
+res_table_ethanol <- lfcShrink(dds,
+                               contrast = c("group", "MutantEthanol",
+                                            "WildtypeEthanol"), type ="ashr")
+
+res_table_WT <- lfcShrink(dds,
+                          contrast = c("group", "WildtypeEthanol",
+                                       "WildtypeGlucose"), type ="ashr")
+res_table_MUT <- lfcShrink(dds,
+                           contrast = c("group", "MutantEthanol",
+                                        "MutantGlucose"), type ="ashr")
+
+# Prints the summary of the results tables
+summary(res_table_glucose, alpha = 0.05)
+# summary(res_table_ethanol, alpha = 0.05)
+# summary(res_table_WT, alpha = 0.05)
+# summary(res_table_MUT, alpha = 0.05)
+
+```
+
+```{r DESEQ2}
+# MA plots to estimate the effect of the lfc-shrinkage
+DESeq2::plotMA(res_table_glucose, ylim=c(-4,4), 
+       main = "LFC shrunken, MUT vs WT glucose phase")
+DESeq2::plotMA(res_table_glucose_unshrunken, ylim=c(-4,4), 
+       main= "LFC unshrunken, MUT vs WT glucose phase")
+```
+
+```{r}
+# Makes a tibble of only significant genes (padj < padj.cutoff)
+padj.cutoff <- 0.05
+
+res_table_glucose_tb <- res_table_glucose %>%
+  data.frame() %>%
+  rownames_to_column(var="Gene_stable_ID") %>% 
+  as_tibble()
+
+sig_glucose <- res_table_glucose_tb %>% 
+  filter(padj < padj.cutoff)
+
+# # Makes a tibble of only significant genes, WTvsMUT1 during ethanol
+res_table_ethanol_tb <- res_table_ethanol %>%
+  data.frame() %>%
+  rownames_to_column(var="Gene_stable_ID") %>%
+  as_tibble()
+
+sig_ethanol <- res_table_ethanol_tb %>%
+  filter(padj < padj.cutoff)
+
+# Makes a tibble of significant genes glucuse vs ethanol in WT
+res_table_WT_tb <- res_table_WT %>%
+  data.frame() %>%
+  rownames_to_column(var="Gene_stable_ID") %>%
+  as_tibble()
+
+sig_WT <- res_table_WT_tb %>%
+  filter(padj < padj.cutoff)
+
+# Makes a tibble of siginifcant genes glucose vs ethanol for MUT
+res_table_MUT_tb <- res_table_MUT %>%
+  data.frame() %>%
+  rownames_to_column(var="Gene_stable_ID") %>%
+  as_tibble()
+
+sig_MUT <- res_table_MUT_tb %>%
+  filter(padj < padj.cutoff)
+```
+
+```{r}
+# Makes a tibble of the unshrunken results tables, used to demostrate effect 
+# of lfc shrinkage
+res_table_glucose_unshrunken_tb <- res_table_glucose_unshrunken %>%
+  data.frame() %>%
+  rownames_to_column(var="Gene_stable_ID") %>% 
+  as_tibble()
+
+sig_glucose_unshrunken <- res_table_glucose_unshrunken_tb %>%
+  filter(padj < padj.cutoff)
+
+# res_table_ethanol_unshrunken_tb <- res_table_ethanol_unshrunken %>%
+#   data.frame() %>%
+#   rownames_to_column(var="Gene_stable_ID") %>% 
+#   as_tibble()
+# 
+# sig_ethanol_unshrunken <- res_table_ethanol_unshrunken_tb %>% 
+#   filter(padj < padj.cutoff)
+```
+
+
+```{r}
+# Runs a function to add the gene names and description to the tibble
+# with significant genes.
+sig_glucose_nice <- nicefy_gene_results(sig_glucose, gene_description)
+sig_ethanol_nice <- nicefy_gene_results(sig_ethanol, gene_description)
+sig_WT_nice <- nicefy_gene_results(sig_WT, gene_description)
+sig_MUT_nice <- nicefy_gene_results(sig_MUT, gene_description)
+```
+
+
+```{r}
+# Saves the nicefied list of sig genes.
+write.table(sig_glucose_nice,
+            file = "./out/RNA_sig_log.txt", sep = "\t",
+            quote = F,row.names = F)
+write.table(sig_ethanol_nice,
+            file = "./out/RNA_sig_PDS.txt", sep = "\t",
+            quote = F, row.names = F)
+```
+
+
+
+
+```{r, echo=F}
+# Plots the results table in a custom volcano plot.
+glucvolc <- volcano_custom(res_table_glucose_tb, gene_description, 
+               title = "", 
+               pcut = 0.05, foldcut = 0.58, labelcount = 0)
+
+etohvolc <- volcano_custom(res_table_ethanol_tb, gene_description,
+               title = "", labelcount = 0)
+
+WTvolc <- volcano_custom(res_table_WT_tb, gene_description,
+               title = "WT glucose vs ethanol phase", labelcount = 30)
+
+MUTvolc <- volcano_custom(res_table_MUT_tb, gene_description,
+              title = "MUT glucose vs ethanol phase", labelcount = 30)
+
+```
+
+
+```{r}
+gscGO <- readRDS('./biological_process.rds')
+gscGO <- loadGSC(gscGO)
+```
+
+
+```{r}
+GSA_and_network <- function(input, gscGO) {
+  tmp <- input %>% as.data.frame() %>% filter(!is.na(padj) & !is.na(pvalue) & baseMean > 0)
+  Pval <- tmp$pvalue
+  Pval[Pval == 0] <- min(Pval %>% subset(Pval != 0))
+  names(Pval) <- rownames(tmp)
+  FC <- tmp$log2FoldChange
+  names(FC) <- rownames(tmp)
+  gsaRes <- runGSA(-log10(Pval)*sign(FC), geneSetStat="fgsea", gsc=gscGO, gsSizeLim=c(20, 200), nPerm=10000)
+  return(gsaRes)
+}
+```
+
+```{r}
+set.seed(2021)
+glucGSA <- GSA_and_network(res_table_glucose, gscGO)
+nplotgluc <- networkPlot2(glucGSA, "distinct", "both", adjusted=T, significance=0.05, ncharLabel=Inf,
+             nodeSize=c(5,30), edgeWidth=c(2,10), labelSize=12, overlap=10,
+             scoreColors=c("darkred", "red", "pink", "lightblue", "blue", "darkblue"))
+```
+
+```{r}
+etohGSA <- GSA_and_network(res_table_ethanol, gscGO)
+nplotetoh <- networkPlot2(etohGSA, "distinct", "both", adjusted=T, significance=0.05, ncharLabel=Inf,
+             nodeSize=c(5,30), edgeWidth=c(2,10), labelSize=12, overlap=10,
+             scoreColors=c("darkred", "red", "pink", "lightblue", "blue", "darkblue"))
+```
+
+```{r}
+WTGSA <- GSA_and_network(res_table_WT, gscGO)
+nplotWT <- networkPlot2(WTGSA, "distinct", "both", adjusted=T, significance=0.05, ncharLabel=Inf,
+             nodeSize=c(5,30), edgeWidth=c(2,10), labelSize=12, overlap=10,
+             scoreColors=c("darkred", "red", "pink", "lightblue", "blue", "darkblue"))
+```
+```{r}
+MUTGSA <- GSA_and_network(res_table_MUT, gscGO)
+nplotMUT <- networkPlot2(MUTGSA, "distinct", "both", adjusted=T, significance=0.05, ncharLabel=Inf,
+             nodeSize=c(5,30), edgeWidth=c(2,10), labelSize=12, overlap=10,
+             scoreColors=c("darkred", "red", "pink", "lightblue", "blue", "darkblue"))
+```
+
+
+```{r}
+capitalize_that_btch <- function(x) {
+  for(i in 1:length(x)) {
+    if(!grepl("RNA", i, fixed = T)) {
+      
+    }
+  }
+  substr(x, 1, 1) <- toupper(substr(x,1,1))
+  x
+}
+```
+
+```{r Topological enrichment}
+eve_exprData <- normalized_counts 
+eve_classData <- c(1,1,0,0)
+names(eve_classData) <- colnames(normalized_counts)
+eve_annData <- tx2gene
+```
+
+```{r}
+eve_grListKEGG <- getKEGGPathways_sce(path = "/Users/cid/Documents/Erik_Genesis_Project/3.Transcriptomics/Analysis/EVE_exp/data/KGMLs", organism = "sce", metaTag = "metabolic")
+```
+```{r}
+X1 <- t(eve_exprData[, eve_classData == 0])
+X2 <- t(eve_exprData[, eve_classData == 1])
+ttpv <- c()
+tts <- c()
+for (i in 1:ncol(X1)) {
+  tt <- t.test(X1[, i], X2[, i])
+  ttpv[i] <- unlist(tt$p.value)
+  tts[i] <- unlist(tt$statistic)
+}
+names(ttpv) <- names(tts) <- rownames(eve_exprData)
+```
+
+```{r}
+prop <- 0.2
+resList <- NULL
+
+for (j in seq(along = eve_grListKEGG)) {
+  print(j)
+  gr <- eve_grListKEGG[[j]]
+  res <- testOneGraph(gr, eve_exprData, eve_classData, verbose = T, prop = prop)
+  
+  resList <- c(resList, list(resList))
+}
+```
+
+
+```{r}
+gIdx <- fSignif[5]
+gr <- graphList[[gIdx]]
+mm <- match(translateKEGGID2GeneID(nodes(gr)), rownames(annData))
+dn <- annData[mm, "NCBI.gene.symbol"]
+res <- plotValuedGraph(gr, values=shift, nodeLabels=dn, qMax=0.95, colorPalette = pal,  height=40, lwd=1, verbose=TRUE, cex=0.5)
+stext(side=3, pos=0, pathwayNames[gIdx])
+ps <- signif(pKEGG[, gIdx],2)
+txt1 <- paste("p(T2)=", ps[1], sep="")
+txt2 <- paste("p(T2F[", ndims[gIdx], "])=", ps[2], sep="")
+txt <- paste(txt1, txt2, sep="\n")
+stext(side=3, pos=1, txt)
+image.plot(legend.only=TRUE, zlim=range(res$breaks), col=pal)
+```
+
+
+```{r}
+ntwrk <- networkPlot2(gsaRes, "distinct", "both", adjusted=T, significance=0.05, ncharLabel=Inf, lay = "4",
+            nodeSize=c(5,30), edgeWidth=c(2,10), labelSize=23, overlap=10,
+            scoreColors=c("yellow", "orange", "red", "lightgreen", "lightblue", "blue"))
+```
+
+```{r}
+gscGO2 <- readRDS('./molecular_function.rds')
+gscGO2 <- loadGSC(gscGO2)
+```
+
+
+```{r GSA plot}
+# Performs GSA on glucose set
+gsaRes2 <- runGSA(-log10(Pval)*sign(FC), geneSetStat="fgsea", gsc=gscGO2, gsSizeLim=c(20, 200), nPerm=10000)
+
+```
+
+```{r}
+ntwrk2 <- networkPlot2(gsaRes2, "distinct", "both", adjusted=T, significance=0.05, ncharLabel=Inf, 
+            nodeSize=c(5,30), edgeWidth=c(2,10), labelSize=20, 
+            scoreColors=c("red", "orange", "yellow", "blue", "lightblue", "lightgreen"))
+```
+
+```{r GSA plot}
+# Performs GSA on ethanol set
+
+etoh_filtered <- res_table_ethanol %>% as.data.frame() %>% filter(!is.na(padj) & !is.na(pvalue) & baseMean > 0)
+Pval<-etoh_filtered$padj
+names(Pval)<-rownames(etoh_filtered)
+FC<-etoh_filtered$log2FoldChange
+names(FC)<-rownames(etoh_filtered)
+if(!exists("resetoh")){resetoh<-consGSA(Pval,FC,GS_biomart,5,200)}
+
+GSA_etoh<- consGSAplot(resetoh,1,0.05,'mixed',FALSE,"")
+```
+
+```{r GSA plot}
+# Performs GSA on "MUT not WT".
+# I.e. DE values from the MUT contrast where the significant DE genes from WT
+# are substracted
+
+MnW <- res_table_MUT_tb[!(res_table_MUT_tb$Gene_stable_ID %in% sig_WT_nice$Gene_stable_ID),]
+
+MnW_filtered <- MnW  %>% filter(!is.na(padj) & !is.na(pvalue) & baseMean > 0)
+Pval<-MnW_filtered$padj
+names(Pval)<-MnW_filtered$Gene_stable_ID
+FC<-MnW_filtered$log2FoldChange
+names(FC)<- MnW_filtered$Gene_stable_ID
+if(!exists("resMnW")){resMnW<-consGSA(Pval,FC,GS_biomart,5,200)}
+
+GSA_MnW <- consGSAplot(resMnW,1,0.05,'mixed',FALSE,"")
+
+```
+
+```{r GSA plot}
+# Performs GSA on "WT not MUT".
+# I.e. DE values from the WT contrast where the significant DE genes from MUT
+# are substracted
+
+WnM <- res_table_WT_tb[!(res_table_WT_tb$Gene_stable_ID %in% sig_MUT_nice$Gene_stable_ID),]
+
+WnM_filtered <- WnM %>% filter(!is.na(padj) & !is.na(pvalue) & baseMean > 0)
+Pval<-WnM_filtered$padj
+names(Pval)<-WnM_filtered$Gene_stable_ID
+FC<-WnM_filtered$log2FoldChange
+names(FC)<- WnM_filtered$Gene_stable_ID
+if(!exists("resWnM")){resWnM<-consGSA(Pval,FC,GS_biomart,5,200)}
+
+GSA_WnM <- consGSAplot(resWnM,1,0.05,'mixed',FALSE,"")
+
+```
+
+```{r}
+# Relevant genes in GO-terms
+GO_in_gluc <- attachGOs(resgluc, sig_glucose_nice, GS_biomart)
+GO_in_etoh <- attachGOs(resetoh, sig_ethanol_nice)
+
+GO_in_MnW <- attachGOs(resMnW, sig_MUT_nice)
+```
+
+```{r}
+attachGOs <- function(GSA_res, DE_sig, GS) {
+  non <- consensusScores(GSA_res, class = "non", plot = F)
+  relevantGOs <- non$rankMat %>% as.data.frame() 
+  relevantGOs <- rownames(subset(relevantGOs, relevantGOs$ConsRank == 1))
+
+  genes_relevantGOs <- GS$gsc[which(names(GS$gsc) %in% relevantGOs)] %>% unlist(recursive = F)
+  df_genes_GOs <- data.frame(Gene_stable_ID = genes_relevantGOs, GO = names(genes_relevantGOs))
+  df_genes_GOs$GO <- gsub('[0-9]', '', df_genes_GOs$GO)
+
+  df_genes_GOs <- df_genes_GOs %>% 
+    group_by(Gene_stable_ID) %>% summarise(GOs = toString(sort(unique(GO)), .groups = 'drop'))
+
+  GO_genes_in_sig <- DE_sig[DE_sig$Gene_stable_ID %in% df_genes_GOs$Gene_stable_ID,]
+  GO_genes_in_sig <- merge(GO_genes_in_sig,df_genes_GOs, by="Gene_stable_ID")
+  return(GO_genes_in_sig)
+}
+```
+
+
+```{r}
+# Heatmap of all genes
+normalized_counts_nice_extra <- normalized_counts_nice %>% 
+  subset(startsWith(Gene_stable_ID, "Y")) %>% 
+  mutate(genelabel = ifelse(Gene_name == "" | Gene_name == "NA" 
+                            | is.na(Gene_name),Gene_stable_ID, Gene_name))
+
+mat_all <- normalized_counts %>% subset(rownames(normalized_counts) %in% GS_biomart$gsc$`tricarboxylic acid cycle`)
+
+mat_all.z <- t(apply(mat_all,1,scale)) 
+colnames(mat_all.z) <- rownames(meta)
+mat_all.z <- mat_all.z[complete.cases(mat_all.z),]
+
+h <- pheatmap(mat_all.z, cluster_rows = T, cluster_cols = T, labels_col =  colnames(mat_all.z), labels_row = normalized_counts_nice_extra$genelabel, scale = "row", show_rownames = F, treeheight_row = 0)
+```
+
+```{r}
+tca_list <- normalized_counts %>% subset(rownames(normalized_counts) %in% GS_biomart$gsc$`tricarboxylic acid cycle`)
+oxid_list <- 
+ribo_list <- normalized_counts %>% subset(rownames(normalized_counts) %in% GS_biomart$gsc$`ribosome biogenesis`)
+
+```
+
+
+```{r}
+
+test <- strsplit(sce_kegg_genes$sce00020, ":") %>% unlist() %>% .[test != "sce"]
+
+mat <- normalized_counts  %>% subset(rownames(normalized_counts) %in% sig_glucose$Gene_stable_ID) %>% subset(rownames(mat) %in% test)
+
+mat.z <- t(apply(mat, 1, scale))
+colnames(mat.z) <- rownames(meta_clean)
+mat.z <- mat.z[complete.cases(mat.z),]
+
+h1 <- pheatmap(mat.z, cluster_rows = T, cluster_cols = T, labels_col = colnames(mat.z), labels_row = 
+                 normalized_counts_nice_extra$genelabel, scale = "row", treeheight_row = 0)
+```
+
+
+```{r}
+# Extract genes that are listed in specific TF related GO terms
+# I.e. searched for transcription factor on SGD
+
+MolTF <- GS$gsc$`RNA polymerase II-specific DNA-binding transcription factor binding` %>% union(GS$gsc$`DNA-binding transcription activator activity, RNA polymerase II-specific`)
+
+BioTF <- GS$gsc$`positive regulation of transcription by RNA polymerase II` %>% union(GS$gsc$`negative regulation of transcription by RNA polymerase II`) %>% union(GS$gsc$`regulation of transcription by RNA polymerase II`) %>% union(GS$gsc$`regulation of DNA-templated transcription`)
+
+coregTF <- GS$gsc$`transcription coregulator activity`
+
+allTF <- c(MolTF, BioTF, coregTF)
+
+# Significant DE TF genes in glucose and ethanol sets
+sig_TF_gluc <- subset(res_table_glucose_tb, 
+                        (res_table_glucose_tb$Gene_stable_ID %in% 
+                           allTF))
+
+sig_TF_etoh <- subset(res_table_ethanol_tb, 
+                        (res_table_ethanol_tb$Gene_stable_ID %in% 
+                           allTF))
+
+volcano_custom(sig_TF_gluc, gene_description, 
+               title = "TF gluc phase", pcut = 0.05, foldcut = 0.2,
+               labelcount = 30)
+
+volcano_custom(sig_TF_etoh, gene_description, 
+               title = "TF etoh phase", pcut = 0.05, foldcut = 0.2,
+               labelcount = 5)
+```
+
+```{r}
+# TF analysis using list from Yeastract
+yeastract <- read.table("TFs_thing.csv", header = F, sep = ",", quote = "")
+yeastract <- yeastract[,3] %>% unique()
+yeastract <- gsub('(p)$','', yeastract)
+yeastract.id <- yeastract[grepl("[A-Z]$", yeastract)]
+yeastract.name <- yeastract[grepl("[0-9]$", yeastract)] %>% toupper()
+yeastract.temp <- subset(gene_description, gene_description$Gene_name %in% yeastract.name)$Gene_stable_ID
+yeastract.all <- c(yeastract.id, yeastract.temp)
+
+length(yeastract)
+length(yeastract.all)
+
+gluc_TF <- res_table_glucose_tb[res_table_glucose_tb$Gene_stable_ID %in% yeastract.all, ]
+etoh_TF <- res_table_ethanol_tb[res_table_ethanol_tb$Gene_stable_ID %in% yeastract.all, ]
+
+MUT_not_WT_expanded <- res_table_MUT_tb[!(res_table_MUT_tb$Gene_stable_ID %in% sig_WT_nice$Gene_stable_ID), ]
+
+MnW_TF <- MUT_not_WT_expanded[MUT_not_WT_expanded$Gene_stable_ID %in% yeastract.all, ]
+
+gluc_TF_volc <- volcano_custom(gluc_TF, gene_description, 
+               title = "", 
+               pcut = 0.05, foldcut = 0.26, labelcount = 10)
+
+# etoh_TF_volc <- volcano_custom(etoh_TF, gene_description, 
+#                title = "", 
+#                pcut = 0.05, foldcut = 0.26, labelcount = 1)
+# 
+# MnW_TF_volc <- volcano_custom(MnW_TF, gene_description, 
+#                title = "", 
+#                pcut = 0.05, foldcut = 0.26, labelcount = 10)
+
+```
+
+```{r, echo=F}
+gluc_counts <- normalized_counts[,7:8] %>% as.data.frame() %>% filter_all(any_vars(. != 0)) %>% as.matrix()
+etoh_counts <- normalized_counts[, 5:6] %>% as.data.frame() %>% filter_all(any_vars(. != 0)) %>% as.matrix()
+
+meta_gluc <- meta[8:9, ]
+meta_etoh <- meta[5:6, ]
+```
+
+
+```{r}
+top_glucs <- rbind(slice_max(sig_glucose_nice, sig_glucose_nice[["log2FoldChange"]], n = 20), slice_min(sig_glucose_nice, sig_glucose_nice[["log2FoldChange"]], n = 20))
+
+htop_glucs <- heatmap_custom(top_glucs, ventot, gluc_counts, meta_gluc)
+
+
+
+top_etohs <- rbind(slice_max(sig_ethanol_nice, sig_ethanol_nice[["log2FoldChange"]], n = 20), slice_min(sig_ethanol_nice, sig_ethanol_nice[["log2FoldChange"]], n = 20))
+
+htop_etohs <- heatmap_custom(top_etohs, ventot, etoh_counts, meta_etoh)
+```
+```{r}
+#path_to_pin_file <- get_pin_file(org = "Saccharomyces_cerevisiae_S288c")
+path_to_pin_file <- get_pin_file(path2pin = "/Users/cid/Documents/Erik_Genesis_Project/3.Transcriptomics/Analysis/EVE_exp/data/KGMLs/PINFILE")
+#path_to_pin_file <- "/Users/cid/Documents/Erik_Genesis_Project/3.Transcriptomics/Analysis/EVE_exp/data/KGMLs/PINfile"
+#gsets_list <- get_gene_sets_list(org_code = "sce")
+```
+
+```{r}
+sce_kegg_genes <- gsets_list$gene_sets
+sce_kegg_description <- gsets_list$descriptions
+```
+
+```{r}
+sce_kegg_genes_alt <- sce_kegg_genes
+conversion_table <- c()
+for (i in 1:length(sce_kegg_genes_alt)) {
+  conversion_table <- c(conversion_table, sce_kegg_genes_alt[[i]])
+}
+print(length(conversion_table))
+conversion_table <- unique(conversion_table)
+print(length(conversion_table))
+
+conversion_table_df <- data.frame(Original = conversion_table, Gene_stable_ID = gsub("sce:", "", conversion_table))
+
+conversion_table_df2 <- merge(conversion_table_df, tx2gene, by.x = c("Gene_stable_ID"), by.y = c("tx_id"), all = F)
+
+missing_vals <- subset(conversion_table_df, !(conversion_table_df$Gene_stable_ID %in% conversion_table_df2$Gene_stable_ID))
+
+missing_vals_df <- data.frame(Gene_stable_ID = missing_vals$Gene_stable_ID, Original = missing_vals$Original, ensgene = missing_vals$Gene_stable_ID, symbol = missing_vals$Gene_stable_ID)
+
+conversion_table_final <- rbind(conversion_table_df2, missing_vals_df)
+
+# conversion_table <- conversion_table %>% t()
+```
+
+```{r}
+for (i in 1:length(sce_kegg_genes_alt)) {
+  temp <- sce_kegg_genes_alt[[i]]
+  temp <- conversion_table_final[conversion_table_final$Original %in% temp,4]
+  sce_kegg_genes_alt[[i]] <- temp
+}
+```
+
+
+```{r}
+saveRDS(sce_kegg_description, './data/sce_kegg_description.RDS')
+saveRDS(sce_kegg_genes, './data/sce_kegg_genes.RDS')
+saveRDS(sce_kegg_genes_alt, './data/sce_kegg_genes_alt.RDS')
+```
+
+```{r}
+sce_kegg_description <- readRDS('./data/sce_kegg_description.RDS')
+sce_kegg_genes <- readRDS('./data/sce_kegg_genes.RDS')
+sce_kegg_genes_alt <- readRDS('./data/sce_kegg_genes_alt.RDS')
+```
+
+
+```{r}
+nice_res_gluc <- nicefy_gene_results(res_table_glucose_tb, gene_description)
+nice_res_gluc$genelabel <- if_else(nice_res_gluc$Gene_name == "" | is.na(nice_res_gluc$Gene_name),
+                              nice_res_gluc$Gene_stable_ID,nice_res_gluc$Gene_name)
+gluc_input <- data.frame(Gene.symbol = nice_res_gluc$genelabel, logFC <-as.numeric( res_table_glucose_tb$log2FoldChange), pval <- as.numeric(res_table_glucose_tb$padj)) %>% na.omit()
+colnames(gluc_input) <- c("Gene.symbol", "logFC", "pval")
+```
+
+
+
+```{r}
+output_df <-run_pathfindR(input = gluc_input,
+                          convert2alias = F,
+                          gene_sets = "Custom",
+                          custom_genes = sce_kegg_genes_alt,
+                          custom_descriptions = sce_kegg_description,
+                          pin_name_path = path_to_pin_file)
+```
+
+```{r}
+nice_res_etoh <- nicefy_gene_results(res_table_ethanol_tb, gene_description)
+nice_res_etoh$genelabel <- if_else(nice_res_etoh$Gene_name == "" | is.na(nice_res_etoh$Gene_name),
+                              nice_res_etoh$Gene_stable_ID,nice_res_etoh$Gene_name)
+etoh_input <- data.frame(Gene.symbol = nice_res_etoh$genelabel, logFC <-as.numeric( res_table_ethanol_tb$log2FoldChange), pval <- as.numeric(res_table_ethanol_tb$padj)) %>% na.omit()
+colnames(etoh_input) <- c("Gene.symbol", "logFC", "pval")
+```
+
+```{r}
+output_df_etoh <-run_pathfindR(input = etoh_input,
+                          convert2alias = F,
+                          gene_sets = "Custom",
+                          custom_genes = sce_kegg_genes_alt,
+                          custom_descriptions = sce_kegg_description,
+                          pin_name_path = path_to_pin_file)
+```
+
+
+
+
+```{r}
+clustr <- cluster_enriched_terms(output_df, plot_dend = F, plot_clusters_graph = F)
+tbl <- knitr::kable(clustr, format = "latex")
+```
+
+```{r}
+reduced_gene_list <- sce_kegg_genes_alt %>% purrr::list_modify("sce03010" = NULL) %>% purrr::list_modify("sce03008" = NULL) %>% purrr::list_modify("sce03020" = NULL)
+```
+
+
+```{r}
+output_df2 <-run_pathfindR(input = gluc_input,
+                          convert2alias = F,
+                          gene_sets = "Custom",
+                          custom_genes = reduced_gene_list,
+                          custom_descriptions = sce_kegg_description,
+                          pin_name_path = path_to_pin_file,
+                          list_active_snw_genes = T)
+```
+
+
+```{r}
+processed_df <- input_processing(
+  input = gluc_input,
+  convert2alias = F,
+  pin_name_path = path_to_pin_file
+)
+```
+
+```{r}
+visualize_terms(
+  result_df = output_df,
+  input_processed = processed_df,
+  pin_name_path = path_to_pin_file
+)
+```
+
+```{r}
+term_graph <- term_gene_graph(output_df, num_terms = 10, use_description = T, node_colors = c("#CCCCCC", "#FF3333","#2222FF"))
+```
+
+
+```{r}
+# Saves the normalized counts in ./data
+write.table(normalized_counts, file = "./data/normalized_counts.txt", 
+            sep = "\t", quote = F, col.names = NA)
+```
+
+```{r}
+png(filename = "gluc_TF.png", res = 300, height = 2000, width = 3000)
+print(gluc_TF_volc)
+dev.off()
+```
+
+```{r}
+png(filename = "etoh_TF.png", res = 300, height = 2000, width = 3000)
+print(etoh_TF_volc)
+dev.off()
+```
+
+```{r}
+png(filename = "MnW_TF.png", res = 300, height = 2000, width = 3000)
+print(MnW_TF_volc)
+dev.off()
+```

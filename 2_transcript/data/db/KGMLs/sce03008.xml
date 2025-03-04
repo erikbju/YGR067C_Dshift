@@ -1,0 +1,343 @@
+<?xml version="1.0"?>
+<!DOCTYPE pathway SYSTEM "https://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Apr 25, 2023 09:34:38 +0900 (GMT+9) -->
+<pathway name="path:sce03008" org="sce" number="03008"
+         title="Ribosome biogenesis in eukaryotes"
+         image="https://www.kegg.jp/kegg/pathway/sce/sce03008.png"
+         link="https://www.kegg.jp/kegg-bin/show_pathway?sce03008">
+    <entry id="39" name="path:sce03008" type="map"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce03008">
+        <graphics name="TITLE:Ribosome biogenesis in eukaryotes" fgcolor="#000000" bgcolor="#FFFFFF"
+             type="roundrectangle" x="195" y="58" width="310" height="25"/>
+    </entry>
+    <entry id="56" name="sce:YNCL0016C sce:YNCL0025C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YNCL0016C+sce:YNCL0025C">
+        <graphics name="RDN18-1..." fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="66" y="156" width="46" height="17"/>
+    </entry>
+    <entry id="57" name="ko:K01986" type="ortholog"
+        link="https://www.kegg.jp/dbget-bin/www_bget?K01986">
+        <graphics name="K01986" fgcolor="#000000" bgcolor="#FFFFFF"
+             type="rectangle" x="121" y="156" width="46" height="17"/>
+    </entry>
+    <entry id="58" name="sce:YNCI0012 sce:YNCL0012C sce:YNCL0021C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YNCI0012+sce:YNCL0012C+sce:YNCL0021C">
+        <graphics name="ICR1..." fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="176" y="156" width="46" height="17"/>
+    </entry>
+    <entry id="59" name="sce:YNCL0018W sce:YNCL0027W sce:YNCL0028W sce:YNCL0029W sce:YNCL0030W sce:YNCL0031W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YNCL0018W+sce:YNCL0027W+sce:YNCL0028W+sce:YNCL0029W+sce:YNCL0030W+sce:YNCL0031W">
+        <graphics name="RDN5-1..." fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="231" y="156" width="46" height="17"/>
+    </entry>
+    <entry id="183" name="sce:YJR002W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YJR002W">
+        <graphics name="MPP10" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="92" y="504" width="46" height="17"/>
+    </entry>
+    <entry id="184" name="sce:YNL075W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YNL075W">
+        <graphics name="IMP4" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="113" y="521" width="46" height="17"/>
+    </entry>
+    <entry id="185" name="sce:YHR148W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YHR148W">
+        <graphics name="IMP3" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="67" y="521" width="46" height="17"/>
+    </entry>
+    <entry id="186" name="sce:YHR196W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YHR196W">
+        <graphics name="UTP9" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="205" y="379" width="46" height="17"/>
+    </entry>
+    <entry id="187" name="sce:YPL126W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YPL126W">
+        <graphics name="NAN1, UTP17" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="205" y="396" width="46" height="17"/>
+    </entry>
+    <entry id="188" name="sce:YMR093W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YMR093W">
+        <graphics name="UTP15" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="159" y="379" width="46" height="17"/>
+    </entry>
+    <entry id="189" name="sce:YDR324C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YDR324C">
+        <graphics name="UTP4" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="113" y="396" width="46" height="17"/>
+    </entry>
+    <entry id="190" name="sce:YJL109C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YJL109C">
+        <graphics name="UTP10" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="159" y="396" width="46" height="17"/>
+    </entry>
+    <entry id="191" name="sce:YGR128C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YGR128C">
+        <graphics name="UTP8" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="113" y="379" width="46" height="17"/>
+    </entry>
+    <entry id="192" name="sce:YDR398W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YDR398W">
+        <graphics name="UTP5" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="67" y="387" width="46" height="17"/>
+    </entry>
+    <entry id="193" name="sce:YJL069C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YJL069C">
+        <graphics name="UTP18" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="67" y="440" width="46" height="17"/>
+    </entry>
+    <entry id="194" name="sce:YLR222C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YLR222C">
+        <graphics name="UTP13" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="113" y="440" width="46" height="17"/>
+    </entry>
+    <entry id="195" name="sce:YDR449C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YDR449C">
+        <graphics name="UTP6" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="159" y="449" width="46" height="17"/>
+    </entry>
+    <entry id="196" name="sce:YCR057C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YCR057C">
+        <graphics name="PWP2, UTP1, YCR055C, YCR058C" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="205" y="449" width="46" height="17"/>
+    </entry>
+    <entry id="197" name="sce:YLR409C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YLR409C">
+        <graphics name="UTP21" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="67" y="457" width="46" height="17"/>
+    </entry>
+    <entry id="198" name="sce:YLR129W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YLR129W">
+        <graphics name="DIP2, UTP12" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="113" y="457" width="46" height="17"/>
+    </entry>
+    <entry id="199" name="sce:YIL035C sce:YOR061W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YIL035C+sce:YOR061W">
+        <graphics name="CKA1..." fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="92" y="319" width="46" height="17"/>
+    </entry>
+    <entry id="200" name="sce:YGL019W sce:YOR039W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YGL019W+sce:YOR039W">
+        <graphics name="CKB1..." fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="92" y="302" width="46" height="17"/>
+    </entry>
+    <entry id="201" name="sce:YGR090W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YGR090W">
+        <graphics name="UTP22" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="67" y="336" width="46" height="17"/>
+    </entry>
+    <entry id="204" name="sce:YCL031C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YCL031C">
+        <graphics name="RRP7" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="113" y="336" width="46" height="17"/>
+    </entry>
+    <entry id="254" name="path:sce03010" type="map"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce03010">
+        <graphics name="Ribosome" fgcolor="#000000" bgcolor="#FFFFFF"
+             type="roundrectangle" x="422" y="946" width="92" height="25"/>
+    </entry>
+    <entry id="255" name="sce:YLR293C sce:YOR185C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YLR293C+sce:YOR185C">
+        <graphics name="GSP1, CNR1, CST17..." fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="404" y="759" width="46" height="17"/>
+    </entry>
+    <entry id="256" name="sce:YGR218W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YGR218W">
+        <graphics name="CRM1, KAP124, XPO1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="404" y="776" width="46" height="17"/>
+    </entry>
+    <entry id="257" name="sce:YHR170W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YHR170W">
+        <graphics name="NMD3, SRC5" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="404" y="793" width="46" height="17"/>
+    </entry>
+    <entry id="258" name="sce:YNCO0025W sce:YNCP0005C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YNCO0025W+sce:YNCP0005C">
+        <graphics name="SNR17A..." fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="426" y="176" width="46" height="17"/>
+    </entry>
+    <entry id="259" name="ko:K14562" type="ortholog"
+        link="https://www.kegg.jp/dbget-bin/www_bget?K14562">
+        <graphics name="K14562" fgcolor="#000000" bgcolor="#FFFFFF"
+             type="rectangle" x="326" y="169" width="46" height="17"/>
+    </entry>
+    <entry id="260" name="sce:YEL026W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YEL026W">
+        <graphics name="SNU13" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="407" y="247" width="46" height="17"/>
+    </entry>
+    <entry id="261" name="sce:YOR310C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YOR310C">
+        <graphics name="NOP58, NOP5" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="362" y="247" width="46" height="17"/>
+    </entry>
+    <entry id="262" name="sce:YLR197W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YLR197W">
+        <graphics name="NOP56, SIK1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="408" y="230" width="46" height="17"/>
+    </entry>
+    <entry id="263" name="sce:YDL014W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YDL014W">
+        <graphics name="NOP1, LOT3" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="362" y="230" width="46" height="17"/>
+    </entry>
+    <entry id="264" name="sce:YHR072W-A" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YHR072W-A">
+        <graphics name="NOP10" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="552" y="247" width="46" height="17"/>
+    </entry>
+    <entry id="265" name="sce:YDL208W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YDL208W">
+        <graphics name="NHP2" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="552" y="230" width="46" height="17"/>
+    </entry>
+    <entry id="266" name="sce:YHR089C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YHR089C">
+        <graphics name="GAR1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="506" y="247" width="46" height="17"/>
+    </entry>
+    <entry id="267" name="sce:YLR175W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YLR175W">
+        <graphics name="CBF5" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="506" y="230" width="46" height="17"/>
+    </entry>
+    <entry id="270" name="sce:YDR339C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YDR339C">
+        <graphics name="FCF1, UTP24" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="346" y="306" width="46" height="17"/>
+    </entry>
+    <entry id="271" name="sce:YMR239C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YMR239C">
+        <graphics name="RNT1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="620" y="318" width="46" height="17"/>
+    </entry>
+    <entry id="272" name="sce:YNL132W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YNL132W">
+        <graphics name="KRE33, RRA1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="510" y="393" width="46" height="17"/>
+    </entry>
+    <entry id="273" name="sce:YML093W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YML093W">
+        <graphics name="UTP14" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="506" y="311" width="46" height="17"/>
+    </entry>
+    <entry id="274" name="sce:YPL217C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YPL217C">
+        <graphics name="BMS1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="423" y="391" width="46" height="17"/>
+    </entry>
+    <entry id="278" name="sce:YOL010W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YOL010W">
+        <graphics name="RCL1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="410" y="418" width="46" height="17"/>
+    </entry>
+    <entry id="279" name="sce:YPL204W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YPL204W">
+        <graphics name="HRR25, KTI14" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="431" y="699" width="46" height="17"/>
+    </entry>
+    <entry id="280" name="sce:YAL033W sce:YBL018C sce:YBR167C sce:YBR257W sce:YDR478W sce:YGR030C sce:YHR062C sce:YLR145W sce:YNL221C sce:YNL282W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YAL033W+sce:YBL018C+sce:YBR167C+sce:YBR257W+sce:YDR478W+sce:YGR030C+sce:YHR062C+sce:YLR145W+sce:YNL221C+sce:YNL282W">
+        <graphics name="POP5, FUN53..." fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="450" y="492" width="46" height="17"/>
+    </entry>
+    <entry id="281" name="sce:YGL173C sce:YOR048C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YGL173C+sce:YOR048C">
+        <graphics name="XRN1, DST2, KEM1, RAR5, SEP1, SKI1..." fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="598" y="625" width="46" height="17"/>
+    </entry>
+    <entry id="282" name="sce:YPL093W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YPL093W">
+        <graphics name="NOG1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="683" y="569" width="46" height="17"/>
+    </entry>
+    <entry id="283" name="sce:YER006W sce:YNR053C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YER006W+sce:YNR053C">
+        <graphics name="NUG1..." fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="683" y="601" width="46" height="17"/>
+    </entry>
+    <entry id="284" name="sce:YLR106C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YLR106C">
+        <graphics name="REA1, MDN1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="683" y="643" width="46" height="17"/>
+    </entry>
+    <entry id="285" name="sce:YLL034C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YLL034C">
+        <graphics name="RIX7" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="683" y="622" width="46" height="17"/>
+    </entry>
+    <entry id="286" name="sce:YGR276C sce:YLR059C sce:YLR107W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YGR276C+sce:YLR059C+sce:YLR107W">
+        <graphics name="RNH70, REX1, RNA82..." fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="509" y="625" width="46" height="17"/>
+    </entry>
+    <entry id="287" name="sce:YPL169C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YPL169C">
+        <graphics name="MEX67" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="458" y="760" width="46" height="17"/>
+    </entry>
+    <entry id="288" name="sce:YKL186C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YKL186C">
+        <graphics name="MTR2" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="458" y="777" width="46" height="17"/>
+    </entry>
+    <entry id="289" name="sce:YGL099W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YGL099W">
+        <graphics name="LSG1, KRE35" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="605" y="865" width="46" height="17"/>
+    </entry>
+    <entry id="290" name="sce:YNL163C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YNL163C">
+        <graphics name="RIA1, EFL1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="514" y="877" width="46" height="17"/>
+    </entry>
+    <entry id="292" name="sce:YOR119C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YOR119C">
+        <graphics name="RIO1, RRP10" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="344" y="854" width="46" height="17"/>
+    </entry>
+    <entry id="293" name="sce:YLR397C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YLR397C">
+        <graphics name="AFG2, DRG1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="659" y="865" width="46" height="17"/>
+    </entry>
+    <entry id="294" name="sce:YNL207W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YNL207W">
+        <graphics name="RIO2" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="344" y="877" width="46" height="17"/>
+    </entry>
+    <entry id="295" name="sce:YDL166C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YDL166C">
+        <graphics name="FAP7" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="262" y="876" width="46" height="17"/>
+    </entry>
+    <entry id="297" name="sce:YNCN0013W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YNCN0013W">
+        <graphics name="NME1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="450" y="509" width="46" height="17"/>
+    </entry>
+    <entry id="298" name="sce:YPR016C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YPR016C">
+        <graphics name="TIF6, CDC95" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="514" y="802" width="46" height="17"/>
+    </entry>
+    <entry id="299" name="sce:YLR186W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YLR186W">
+        <graphics name="EMG1, NEP1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="423" y="369" width="46" height="17"/>
+    </entry>
+    <entry id="301" name="sce:YLR022C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YLR022C">
+        <graphics name="SDO1" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="514" y="860" width="46" height="17"/>
+    </entry>
+    <entry id="303" name="sce:YPL043W" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YPL043W">
+        <graphics name="NOP4, NOP77" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="598" y="685" width="46" height="17"/>
+    </entry>
+    <entry id="304" name="sce:YOR056C" type="gene"
+        link="https://www.kegg.jp/dbget-bin/www_bget?sce:YOR056C">
+        <graphics name="NOB1, YOR29-07" fgcolor="#000000" bgcolor="#BFFFBF"
+             type="rectangle" x="347" y="720" width="46" height="17"/>
+    </entry>
+</pathway>

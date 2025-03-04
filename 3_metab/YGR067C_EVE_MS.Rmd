@@ -1,0 +1,565 @@
+---
+title: "EVE_MS"
+author: "Erik Bjurström"
+date: "2024-08-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(notame)
+library(FELLA)
+```
+
+```{r}
+print(getwd())
+```
+
+
+```{r}
+POS <- read_from_excel(file = "./data/POS/POS_pruned.xlsx", sheet = 1,
+                        corner_row = 7, corner_column = 5,
+                        split_by = c("Column", "Ion Mode"))
+
+NEG <- read_from_excel(file = "./data/NEG/NEG_pruned.xlsx", sheet = 1,
+                        corner_row = 7, corner_column = 5,
+                        split_by = c("Column", "Ion Mode"))
+```
+
+```{r}
+modes <- list()
+modes[[1]] <- construct_metabosets(exprs = POS$exprs, pheno_data = POS$pheno_data,
+                             feature_data = POS$feature_data,
+                             group_col = "Group")
+
+modes[[2]] <- construct_metabosets(exprs = NEG$exprs, pheno_data = NEG$pheno_data,
+                                   feature_data = NEG$feature_data,
+                                   group_col = "Group")
+
+```
+
+```{r}
+COMB <- read_from_excel(file = "neo_combined_area.xlsx", sheet = 1,
+                        corner_row = 7, corner_column = 5,
+                        split_by = c("Column", "Ion Mode"))
+```
+
+```{r}
+modes <- construct_metabosets(exprs = COMB$exprs, pheno_data = COMB$pheno_data,
+                             feature_data = COMB$feature_data,
+                             group_col = "Group")
+```
+
+```{r}
+processed <- list()
+for (i in seq_along(modes)) {
+  name <- names(modes)[i]
+  mode <- modes[[i]]
+  # Set all zero abundance to NA
+  mode <- mark_nas(mode, value = 0)
+  mode <- flag_detection(mode, qc_limit = 0.7, group_limit = 0.8)
+  corrected <- correct_drift(mode)
+  
+  corrected <- corrected %>% assess_quality() %>% flag_quality() %>% drop_flagged()
+  processed[[i]] <- corrected
+}
+
+```
+
+```{r}
+#merged <- merge_metabosets(processed)
+#merged_no_qc <- drop_qcs(merged)
+```
+
+```{r}
+processed_no_qc <- list()
+for (i in seq_along(processed)) {
+  dropped_qc <- processed[[i]]
+  processed_no_qc[[i]] <- drop_qcs(dropped_qc)
+  
+}
+```
+
+
+```{r}
+set.seed(38)
+imputed <- impute_rf(merged_no_qc)
+```
+
+```{r}
+set.seed(38)
+imputed_list <- list()
+for (i in seq_along(processed_no_qc)) {
+  imputed_list[[i]] <- impute_rf(processed_no_qc[[i]])
+}
+```
+
+```{r}
+saveRDS(imputed_list, file = "./r_objects/Combined_imputed.rds")
+```
+
+```{r}
+imputed_list <- readRDS("./r_objects/Combined_imputed.rds")
+```
+
+
+```{r}
+set.seed(38)
+normalized_list <- imputed_list
+for (i in seq_along(normalized_list)) {
+  exprs(normalized_list[[i]]) <- log(exprs(normalized_list[[i]]))
+  normalized_list[[i]] <- pqn_normalization(normalized_list[[i]], ref = "all")
+  exprs(normalized_list[[i]]) <- auto_scale(exprs(normalized_list[[i]]))
+}
+
+```
+
+
+```{r}
+auto_scale <- function(expr) {
+  m <- mean(expr)
+  sd <- sd(expr)
+  out <- (expr-m)/sd
+  return(out)
+}
+```
+
+
+```{r}
+clustered <- cluster_features(normalized, rt_window = 1/60, all_features = T, corr_thresh = 0.9, d_thresh = 0.8)
+```
+
+```{r}
+set.seed(38)
+clustered_list <- list()
+for (i in seq_along(normalized_list)) {
+  clustered_list[[i]] <- cluster_features(normalized_list[[i]], rt_window = 1/60, all_features = T, corr_thresh = 0.9, d_thresh = 0.8)
+  
+}
+
+clustered_list_nonorm <- list()
+for (i in seq_along(imputed_list)) {
+  clustered_list_nonorm[[i]] <- cluster_features(imputed_list[[i]], rt_window = 1/60, all_features = T, corr_thresh = 0.9, d_thresh = 0.8)
+  
+}
+```
+
+
+```{r}
+compressed_list <- list()
+for (i in seq_along(clustered_list)) {
+  compressed_list[[i]] <- compress_clusters(clustered_list[[i]])
+}
+```
+
+```{r}
+compressed_list_nonorm <- list()
+for (i in seq_along(clustered_list)) {
+  compressed_list_nonorm[[i]] <- compress_clusters(clustered_list_nonorm[[i]])
+}
+```
+
+
+```{r}
+saveRDS(clustered_list, file = "./r_objects/clustered_list.rds")
+saveRDS(compressed_list, file = "./r_objects/compressed_list.rds")
+```
+
+```{r}
+saveRDS(clustered_list_nonorm, file = "./r_objects/clustered_list_nonorm.rds")
+saveRDS(compressed_list_nonorm, file = "./r_objects/compressed_list_nonorm.rds")
+```
+
+```{r}
+clustered_list <- readRDS("clustered_list.rds")
+compressed_list <- readRDS("compressed_list.rds")
+```
+
+```{r}
+clustered_list_nonorm <- readRDS("clustered_list_nonorm.rds")
+compressed_list_nonorm <- readRDS("compressed_list_nonorm.rds")
+```
+
+
+
+```{r}
+merged <- merge_metabosets(compressed_list)
+```
+
+```{r}
+merged_nonorm <- merge_metabosets(compressed_list_nonorm)
+```
+
+
+
+```{r}
+grps <- unique(merged_nonorm$Group)
+cmb <- combn(grps,2)
+cmb <- cmb[,substring(cmb[1,],3,3) == substring(cmb[2,],3,3) | substring(cmb[1,],4,6) == substring(cmb[2,],4,6)]
+```
+
+```{r}
+contrasts<- list()
+
+for (i in 1:ncol(cmb)) {
+  contrasts[[paste0(cmb[,i], collapse ="_")]] <- merged_nonorm[, merged_nonorm$Group %in% cmb[,i]]
+}
+```
+
+```{r}
+contrasts_norm <- list()
+
+for (i in 1:ncol(cmb)) {
+  contrasts_norm[[paste0(cmb[,i], collapse = "_")]] <- merged[, merged$Group %in% cmb[,i]]
+} 
+```
+
+```{r}
+lm_results_nonorm <- lapply(contrasts, perform_lm, "Feature ~ Group")
+```
+
+```{r}
+lm_results <- lapply(contrasts_norm, perform_lm, "Feature ~ Group")
+```
+
+
+```{r}
+saveRDS(lm_results_nonorm, "./r_objects/Combined_lmres.rds")
+saveRDS(lm_results, "./r_objects/Combined_lmres_norm.rds")
+```
+
+```{r}
+lm_results_nonorm <- readRDS("./r_objects/Combined_lmres.rds")
+lm_results <- readRDS("./r_objects/Combined_lmres_norm.rds")
+```
+
+```{r}
+AvB <- get_final_list(lm_results_nonorm$A_Rlog_B_Mlog, COMB)
+AvC <- get_final_list(lm_results_nonorm$A_Rlog_C_Rpds, COMB)
+BvD <- get_final_list(lm_results_nonorm$B_Mlog_D_Mpds, COMB)
+CvD <- get_final_list(lm_results_nonorm$C_Rpds_D_Mpds, COMB)
+```
+
+```{r}
+AvBn <- get_final_list(lm_results$A_Rlog_B_Mlog, COMB)
+AvCn <- get_final_list(lm_results$A_Rlog_C_Rpds, COMB)
+BvDn <- get_final_list(lm_results$B_Mlog_D_Mpds, COMB)
+CvDn <- get_final_list(lm_results$C_Rpds_D_Mpds, COMB)
+```
+
+
+```{r}
+volcano_MS <- function(input, name, plim = 0.05, flim = 0.58, qval = F) {
+
+  # Let the first condition (often reference strain or log-phase) be A and second condition (often mutant strain or PDS-phase) be B
+  # Given a linear model Y = K * x + m, where Y is the predicted peak area, x an indicator function [0 if A, 1 if B], m the intercept (i.e. predicted Y for A)
+  # and K a vector of the slopes caused by B. Thus Y_A = K * 0 + m -> Y_A = m, and Y_B = K * 1 + m -> Y_B = K + m
+  # Then the log2fold change (l2fc) is: log2(Y_B/Y_A) = log2((K+m)/m) = log2(K/m + 1) 
+  tmp <- data.frame(feats = input[,1], pvals = input[,14+qval], l2fc = log2(input[,9]/input[,2]+1)) %>% mutate(diff = rep("NO"))
+ 
+ # tmp <- tmp %>% mutate(diff = if_else((pvals <= plim) & (l2fc >= flim), "UP", "NO")) %>% mutate(diff = if_else((pvals <= plim) & (l2fc <= -flim), "DOWN", "NO"))
+  tmp <- tmp %>% mutate(diff = case_when((pvals <= plim) & (l2fc >= flim) ~ "UP", (pvals <= plim) & (l2fc <= -flim) ~ "DOWN", .default = diff))
+  
+  colnames(tmp) <- c("feats", "pvals", "l2fc", "diff")
+  groupcol <- c(UP = "salmon", NO = "grey40", DOWN = "cyan3")
+
+  if (qval) {
+    ytit <- "-log10(FDR)"
+  } else {
+    ytit <- "-log10(p-values)"
+  }
+  
+  # pmax <- max(-log10(pvals))
+  # fmax <- max(abs(l2fc))
+  
+  pmax <- 3
+  fmax <- 12
+  
+  p <- ggplot(tmp, aes(x = l2fc, y = -log10(pvals), col = diff)) + geom_point() + geom_vline(xintercept = c(-flim, flim)) + geom_hline(yintercept = -log10(plim)) + xlim(c(-fmax, fmax)) + ylim(0, pmax) + scale_color_manual(values = groupcol) + theme_bw() + ggtitle(name) + xlab("log2 Fold Change") + ylab(ytit)
+  return(p)
+}
+
+
+```
+
+```{r}
+manhattan_MS <- function(input_model, name, input_data, x.axis = "mz", directed = F, plim = 0.05, qval = F) {
+  
+  tmp <- data.frame(feats = input_model[,1], pvals = -log10(input_model[,14+qval]), l2fc = log2(input_model[,9]/input_model[,2]+1)) %>% mutate(diff = rep("NO"))
+  #colnames(tmp) <- c("feats", "pvals", "l2fc", "diff")
+  
+  pmax <- 6.5
+  
+  if (directed) {
+    tmp <- tmp %>% mutate(diff = case_when((pvals >= -log10(plim)) & (l2fc > 0) ~ "UP", (pvals >= -log10(plim)) & (l2fc < 0) ~ "DOWN", .default = diff))
+    tmp <- tmp %>% mutate(pvals = pvals * sign(l2fc)) 
+    ytit = "Sign of effect * "
+    y.intercept <- c(log10(plim), -log10(plim))
+    y.max <- c(-pmax,pmax)
+  } else {
+    tmp <- tmp %>% mutate(diff = case_when((pvals >= -log10(plim)) ~ "SIGNIFICANT", .default = diff))
+    ytit = ""
+    y.intercept <- -log10(plim)
+    y.max <- c(0,pmax)
+  }
+  
+  
+  groupcol <- c(SIGNIFICANT = "darkgreen", UP = "salmon", NO = "grey40", DOWN = "cyan3")
+  if (qval) {
+    ytit <- paste0(ytit, "-log10(FDR)")
+  } else {
+    ytit <- paste0(ytit, "-log10(p-value)")
+  }
+  
+  
+  
+  tmp2 <- data.frame(feats = input_data[,1])
+  
+  
+  if (x.axis == "mz") {
+    tmp2$x <- input_data[,3]
+    xtit <- "Average_Mz"
+  } else if (x.axis == "rt") {
+    tmp2$x <- input_data[,2]
+    xtit <- "Average Rt"
+  } else {
+    print("Please enter a valid variable, mz or rt")
+    stop()
+  }
+  tmp <- merge(tmp, tmp2, by = "feats")
+  
+  
+  
+  p <- ggplot(tmp, aes(x = x, y = pvals, col = diff)) + geom_point() + geom_hline(yintercept = y.intercept) + scale_color_manual(values = groupcol) + xlab(xtit) + ylab(ytit) + theme_bw() + ggtitle(name) + ylim(y.max)
+  
+  return(p)
+  
+}
+
+```
+
+
+```{r}
+compare_mz_rt <- function(input_model, name, input_data, plim = 0.05, qval = F) {
+  tmp <- data.frame(feats = input_model[,1], pvals = input_model[,14+qval], l2fc = log2(input_model[,9]/input_model[,2]+1)) %>% dplyr::filter(pvals <= plim) 
+  
+  tmp2 <- data.frame(feats = input_data[,1], rt = input_data[,2],  mz = input_data[,3])
+  
+  tmp <- merge(tmp, tmp2, by = "feats")
+  
+  l2fccol <- c("darkblue", "grey80", "red")
+  #collim <- max(abs(tmp$l2fc))
+  collim <- 10
+  
+  if (qval) {
+    ytit <-  "-log10(FDR)"
+  } else {
+    ytit <-  "-log10(p-value)"
+  }
+  
+  p <- ggplot(tmp, aes(x = rt, y =mz, size = -log10(pvals), col = l2fc)) + geom_point() + scale_color_gradientn(colors = l2fccol, limits = c(-collim, collim)) + xlab("Average Retention time") + ylab("Average m/z") + theme_bw() + ggtitle(name) + labs(size = ytit, col = "log2 Fold Change")
+}
+#test <- compare_mz_rt(lm_results_nonorm$C_Rpds_D_Mpds, "test", rts_and_mzs, qval =F, plim = 0.01)
+```
+
+```{r}
+compare_mz_rt_VIP <- function(input_model, name, input_data, VIP, plim = 0.05, qval = F) {
+  tmp <- data.frame(feats = input_model[,1], pvals = input_model[,14+qval]) %>% dplyr::filter(pvals <= plim) 
+  
+  tmp2 <- data.frame(feats = input_data[,1], rt = input_data[,2],  mz = input_data[,3])
+  
+  tmp3 <- data.frame(feats = VIP[,4], comp1 = VIP[,1])
+    
+  tmp <- merge(tmp, tmp2, by = "feats")
+  tmp <- merge(tmp, tmp3, by = "feats")
+  
+  if (qval) {
+    ytit <-  "-log10(FDR)"
+  } else {
+    ytit <-  "-log10(p-value)"
+  }
+  
+  p <- ggplot(tmp, aes(x = rt, y =mz, size = -log10(pvals), col = comp1)) + geom_point() + xlab("Average Retention time") + ylab("Average m/z") + theme_bw() + ggtitle(name) + labs(size = ytit, col = "PLS-DA VIP") + scale_color_gradient(low ="yellow", high="red")
+}
+#test <- compare_mz_rt_VIP(lm_results_nonorm$C_Rpds_D_Mpds, "test", rts_and_mzs, vip_all, qval =F, plim = 0.01)
+```
+
+```{r}
+p_list <- list()
+
+for (i in seq_along(lm_results_nonorm)) {
+  p_list[[i]] <- volcano_MS(lm_results_nonorm[[i]], names(lm_results_nonorm)[i], qval = F, plim = 0.1)
+}
+
+p <- do.call(grid.arrange, p_list)
+```
+
+```{r}
+p_list2 <- list()
+
+for (i in seq_along(lm_results_nonorm)) {
+  p_list2[[i]] <- manhattan_MS(lm_results_nonorm[[i]], names(lm_results_nonorm)[i], rts_and_mzs, directed = F, qval = F, plim = 0.1)
+}
+
+p2 <- do.call(grid.arrange, p_list2)
+```
+
+```{r}
+p_list3 <- list()
+
+for (i in seq_along(lm_results_nonorm)) {
+  lm_filtered[[i]] <- lm_results_nonorm[[i]] %>% subset(Feature_ID %in% (PDS %>% subset(`Metabolite name`!= "Unknown") %>% pull(Feature_ID)))
+}
+
+for (i in seq_along(lm_filtered)) {
+  p_list3[[i]] <- compare_mz_rt(lm_filtered[[i]], names(lm_filtered)[i], rts_and_mzs, qval = F, plim = 0.1)
+}
+
+p3 <- do.call(grid.arrange, p_list3)
+```
+
+```{r}
+p_list4 <- list()
+
+lm_filtered <- list()
+
+for (i in seq_along(lm_results_nonorm)) {
+  lm_filtered[[i]] <- lm_results_nonorm[[i]] %>% subset(Feature_ID %in% (PDS %>% subset(Metabolite_name != "Unknown") %>% pull(Feature_ID)))
+}
+
+for (i in seq_along(lm_filtered)) {
+  p_list4[[i]] <- compare_mz_rt_VIP(lm_filtered[[i]], names(lm_filtered)[i], rts_and_mzs, vip_all, qval = F, plim = 0.1)
+}
+
+p4 <- do.call(grid.arrange, p_list4)
+```
+
+
+```{r}
+rts_and_mzs <- merged_nonorm@featureData@data %>% dplyr::select(Feature_ID, Average_Rt_min_, Average_Mz)
+```
+
+```{r}
+get_final_list <- function(input, refer) {
+  tmp <- data.frame(Feature_ID = input[,1], l2fc = log2(input[,9]/input[,2]+1), p = input[,14], FDR = input[,15])
+  tmp <- merge(refer$feature_data, tmp)
+  posn <- nrow(refer$feature_data %>% subset(Split == "RP_POS"))
+  tmp_pos <- tmp %>% subset(Split == "RP_POS")
+  tmp_neg <- tmp %>% subset(Split == "RP_NEG") %>% mutate(Alignment_ID = Alignment_ID - posn)
+  out <- list(tmp_pos, tmp_neg)
+  names(out) <- c("POS", "NEG")
+  return(out)
+}
+```
+
+```{r}
+ALLPO <- read.delim("./data/POS/POS.txt", quote = "")
+colis <- ALLPO[4,]
+colis[56] <- "Avg"
+colis[57] <- "Std"
+colnames(ALLPO) <- colis
+SMALLPOS <- ALLPO[5:nrow(ALLPO),c(1,4,12,13,25,32)]
+```
+
+```{r}
+ALLNE <- read.delim("./data/NEG/NEG.txt", quote = "")
+colnames(ALLNE) <- colis
+SMALLNEG <- ALLNE[5:nrow(ALLNE), c(1,4,12,13,25,32)]
+
+```
+
+
+
+
+
+```{r}
+PDS1 <- merge(SMALLPOS, CvD$POS, by.x = "Alignment ID", by.y = "Alignment_ID")
+PDS2 <- merge(SMALLNEG, CvD$NEG, by.x = "Alignment ID", by.y = "Alignment_ID")
+PDS3 <- rbind(PDS1,PDS2)
+```
+
+```{r}
+log1 <- merge(SMALLPOS, AvB$POS, by.x = "Alignment ID", by.y = "Alignment_ID")
+log2 <- merge(SMALLNEG, AvB$NEG, by.x = "Alignment ID", by.y = "Alignment_ID")
+log3 <- rbind(log1,log2)
+```
+
+```{r}
+metab_names_log <- str_split_fixed(str_split_fixed(log3 %>% subset(`Metabolite name`!="Unknown") %>% subset(p<0.1) %>% pull(`Metabolite name`), ";",2)[,1], ": ",2)[,2] %>% unique()
+
+metab_names_PDS <- str_split_fixed(str_split_fixed(PDS3 %>% subset(`Metabolite name`!="Unknown") %>% subset(p<0.1) %>% pull(`Metabolite name`), ";",2)[,1], ": ",2)[,2] %>% unique()
+```
+
+```{r}
+metab_names_log <- get_unique_metab_names(log3)
+metab_names_PDS <- get_unique_metab_names(PDS3)
+```
+
+```{r}
+get_unique_metab_names <- function(input) {
+  tmp <- input %>% subset(`Metabolite name`!="Unknown") %>% subset(p<0.1) %>% dplyr::select(`Metabolite name`, `m/z similarity`, l2fc)
+  tmp <- tmp %>% mutate(`Metabolite name` = str_split_fixed(str_split_fixed(`Metabolite name`, ";",2)[,1], ": ",2)[,2])
+  tmp <- tmp %>% arrange(`Metabolite name`) 
+  out <- data.frame(`Metabolite name` = character(), `m/z similarity` = character(), l2fc = double())
+  # print(typeof(tmp[2,2]))
+  
+  i <- 1
+  while (i < nrow(tmp)) {
+    if (tmp[i,1] == tmp[i+1,1]) {
+      
+      j <- i
+      escape <- F
+      tmp_dup <- tmp[i,]
+      while(escape == F) {
+        
+        if (tmp[j,1] != tmp[j+1, 1]) {
+          tmp_dup <- tmp_dup %>% arrange(desc(`m/z similarity`))
+          # print(tmp_dup[1,2])
+          if (tmp_dup[1,2] != tmp_dup[2,2]) {
+            out <- rbind(out, tmp_dup[1,])
+          } else {
+            print(paste0(tmp_dup[1,1], " was discarded due to uncertainty." ))
+          }
+          escape <- T
+          i <- j + 1
+        }
+        j = j + 1
+        tmp_dup <- rbind(tmp_dup, tmp[j,])
+      }
+    } else {
+      out <- rbind(out, tmp[i,])
+      i = i +1
+    }
+    
+  }
+  return(out)
+}
+```
+
+
+```{r}
+write.table(metab_names_log, file = "./out/metab_names_log.txt", sep = "\t", row.names = F)
+write.table(metab_names_PDS, file = "./out/metab_names_PDS.txt", sep = "\t", row.names = F)
+
+```
+
+```{r}
+log_keggs <- read.csv("./data/db/log_KEGG.csv") %>% dplyr::select(Query, KEGG)  %>% subset(KEGG != "<NA>")
+PDS_keggs <- read.csv("./data/db/PDS_KEGG.csv") %>% dplyr::select(Query, KEGG)  %>% subset(KEGG != "<NA>")
+```
+
+```{r}
+log_final <- merge(log_keggs, metab_names_log, by.x = "Query", by.y = "Metabolite name")
+PDS_final <- merge(PDS_keggs, metab_names_PDS, by.x = "Query", by.y = "Metabolite name")
+```
+
+```{r}
+write.table(log_final, file = "./out/metab_sig_log.txt", sep = "\t", row.names = F)
+write.table(PDS_final, file = "./out/metab_sig_PDS.txt", sep = "\t", row.names = F)
+```
+
+

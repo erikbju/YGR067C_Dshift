@@ -1,0 +1,76 @@
+"Metabolite name"	"m/z similarity"	"l2fc"
+"17-HDoHE"	"1.00"	-0.354669537380292
+"2,7-Naphthalenedisulfonic acid"	"0.85"	-1.73971975043934
+"2-Mercapto benzimidazole"	"1"	1.10052155092068
+"3,4,5-Trimethoxycinnamic acid"	"1"	0.372577989857142
+"4-Isopropylaniline"	"1"	-1.30941314300559
+"6-Methylcoumarin"	"0.97"	1.55943897651015
+"Aminopyrine"	"0.67"	0.948547193158201
+"Apigenin"	"1"	0.488457296228491
+"Asparagine"	"0.98"	1.174483569802
+"Atraton"	"0.79"	-1.35518945791644
+"Benzimidazole"	"1"	0.997876734099196
+"Benzoylcholine"	"0.83"	0.376848027687459
+"Biotin"	"1"	0.455056967502658
+"Boldine"	"1"	1.49351856950233
+"Caffeic acid"	"0.87"	-0.893640877260413
+"Caffeine"	"0.74"	0.257886327755131
+"Citalopram"	"0.93"	-0.695097055649391
+"Claussequinone"	"0.61"	1.38593219469686
+"Clotrimazole"	"0.69"	0.675580049465843
+"Cyanidin-3-O-(2''-O-beta-xylopyranosyl-beta-glucopyranoside)-5-O-beta-glucopyranoside"	"0.7"	1.36564265348101
+"D-(+)-Galactosamine"	"0.93"	-0.797848117680684
+"Di(ethylhexyl) phthalate"	"1"	-1.02079555556794
+"Diazinon"	"0.99"	1.25029430011526
+"Dinoseb"	"0.84"	0.595997399952114
+"Emetine"	"0.93"	0.857098199107356
+"Eprosartan"	"0.98"	0.275963061558703
+"Fipronil"	"0.93"	0.801123550065245
+"Forskolin"	"0.77"	-0.420944730025554
+"Fukugetin"	"0.94"	-1.32059078537524
+"Galaxolidone"	"0.9"	0.331468442279096
+"Gingerol"	"1"	0.488533593926931
+"Glutamic acid"	"0.97"	0.865112423960406
+"Glycyl-L-proline"	"0.78"	0.80783145324695
+"Harmaline"	"0.99"	-0.615948155728654
+"Harmine"	"0.88"	0.268543761513727
+"Hydratoperidinin"	"0.81"	0.517970240279348
+"Hydrocortisone"	"0.98"	0.386475844862151
+"Imazalil"	"0.82"	-1.19606302967487
+"Irbesartan"	"1"	1.51396484125123
+"Kaempferide"	"0.97"	-1.07799226885884
+"L-Anserine"	"0.81"	-0.526341816009687
+"L-Carnosine"	"0.85"	0.427712423874023
+"Lactose"	"0.91"	-0.668896694514695
+"Laudanosine"	"1"	0.432832833061832
+"Leucine_Enkephalin"	"1"	-7.29998070029441
+"Lincomycin"	"0.94"	-0.863435739052815
+"MCPA"	"1.00"	-0.913958586984517
+"MCPB"	"0.99"	-0.496168961570821
+"Mephedrone"	"1"	1.34000153822904
+"Methoxyfenozide"	"0.95"	1.27839399508405
+"Methylprednisolone"	"1"	-1.13973809138744
+"N,N-Dimethylaniline"	"1"	0.344601011053077
+"N,N-Dimethylsulfamide"	"1"	1.37185537171046
+"Orotic acid"	"0.76"	0.400947707289037
+"Phosphatidylinositol 16"	"1.00"	1.1552607362294
+"Phosphoenolpyruvic acid"	"0.93"	-0.0804646705250679
+"Phthalic anhydride"	"0.73"	1.20633953598165
+"Poldine"	"1"	1.17008481120153
+"Ribitol"	"0.99"	0.111650058186321
+"Robinin"	"1"	1.12772857331894
+"Santonin"	"0.95"	0.365684592026039
+"Spectinomycin"	"0.94"	0.792598569858039
+"Streptomycin"	"0.87"	1.30962789356124
+"Strychnine"	"0.89"	0.940669331992864
+"Sulfanilic acid"	"0.83"	0.870465608238571
+"Taurocholate"	"0.79"	1.48591470022842
+"Temazepam"	"0.99"	-0.577515671265057
+"Thioridazine"	"1"	1.04226741441958
+"Trimipramine"	"0.88"	0.55486668082961
+"Tyramine"	"1"	-0.705819374836778
+"Umbelliferone"	"0.97"	1.14534038930533
+"Uridine"	"0.99"	-1.12543543762465
+"Urocanic acid"	"0.98"	1.06317260806814
+"Valine"	"1"	-0.757887998695079
+"Vitamin K1"	"0.99"	-0.450323240475781
