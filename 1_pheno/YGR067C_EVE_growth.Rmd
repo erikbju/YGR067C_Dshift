@@ -9,43 +9,18 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
 ```{r libraries}
 #Loads all the libraries needed for analysis
-library(DESeq2,warn.conflicts = F)
 library(tidyverse,warn.conflicts = F)
-library(RColorBrewer,warn.conflicts = F)
-library(pheatmap,warn.conflicts = F)
-library(DEGreport,warn.conflicts = F)
-library(tximport,warn.conflicts = F)
 library(ggplot2,warn.conflicts = F)
-library(ggrepel,warn.conflicts = F)
-#library(PCAtools)
-library(ashr)
 library(zoo)
-
-library(limma,warn.conflicts = F)
-library(knitr,warn.conflicts = F)
-library(edgeR,warn.conflicts = F)
-#library(gdata,warn.conflicts = F)
-library(snowfall,warn.conflicts = F)
-library(parallel,warn.conflicts = F)
-cores <- as.numeric(detectCores())
-library(piano,warn.conflicts = F)
-library(reshape2,warn.conflicts = F)
-library(grid,warn.conflicts = F)
-library(scales,warn.conflicts = F)
-library(enrichplot, warn.conflicts = F)
-# library(VennDetail, warn.conflicts = F)
-library(biomaRt)
-library(pathfindR)
-
+library(svglite)
 ```
 
 
 ```{r}
 # Imports all the R functions in this Rmd from subdir "R_scripts"
-file.sources = list.files("./R_scripts",pattern = "*.R",full.names = T)
+file.sources = list.files("../R_scripts",pattern = "*.R",full.names = T)
 sapply(file.sources, source, .GlobalEnv)
 ```
 
@@ -53,96 +28,31 @@ sapply(file.sources, source, .GlobalEnv)
 growth_data <- read.csv("./Growth_curve/all_measurements.csv", sep = ",", quote="")
 str_sub(growth_data$sample_phase, 1, 1) <- str_sub(growth_data$sample_phase, 1, 1) %>% str_to_upper()
 colnames(growth_data) = c("dt", "test_name", "loop", "plate", "well", "OD560", "hours", "row", "column", "quadrant", "Strain", "Phase")
-growth_data
 ```
 
 ```{r}
+loopbreaks <- c()
+for (i in seq(1,6)) {
+  loopbreaks <- c(loopbreaks, growth_data %>% subset(plate == i & well == "A01" & hours < 20) %>% dplyr::select(loop) %>% max())
+}
 
-Plate1 <- ODcurve(growth_data, 1, 3)
-Plate2 <- ODcurve(growth_data, 2, 3)
-Plate3 <- ODcurve(growth_data, 3, 3)
-Plate4 <- ODcurve(growth_data, 4, 3)
-Plate5 <- ODcurve(growth_data, 5, 3)
-Plate6 <- ODcurve(growth_data, 6, 3)
-legend <- get_legend(Plate1 + theme(legend.box.margin = margin(0,0,0,12)))
+endofexp <- c()
+for (i in seq(1,6)) {
+  endofexp <- c(endofexp, growth_data %>% subset(plate == i & well == "A01" & hours > 20) %>% dplyr::select(loop) %>% max())
+}
 
-Combined_curves <- plot_grid(
-  Plate1 + theme(legend.position = "none", axis.title.x=element_blank()),
-  Plate2 + theme(legend.position = "none", axis.title.x=element_blank(), axis.title.y=element_blank()),
-  Plate3 + theme(legend.position = "none", axis.title.x=element_blank(), axis.title.y=element_blank()),
-  legend,
-  Plate4 + theme(legend.position = "none"),
-  Plate5 + theme(legend.position = "none", axis.title.y=element_blank()),
-  Plate6 + theme(legend.position = "none", axis.title.y=element_blank()),
-  align = 'vh',
-  nrow=2,
-  rel_widths = c(1,1,1,0.3)
-)
+all_of_curve <- growth_data %>% subset(Phase == "Post-shift") %>% mutate(plate = as.numeric(plate)) %>% subset(!(loop %in% c(1,2) & hours > 1.4)) %>% subset(!(hours < 1.5))  %>% mutate(loop = if_else(hours > 11.8, loop + loopbreaks[plate], loop))
 
 
-```
 
-```{r}
-reflog <- growth_data %>% subset( Strain == "WT" & Phase == "Pre-shift" & hours > 0 & hours < 12)
-refmodel <- lm(log(reflog$OD560) ~ reflog$hours)
-refmodel.df <- data.frame(hours = reflog$hours, OD560 =exp(fitted(refmodel))) %>% unique() %>% mutate(Strain = "WT") %>% mutate(Phase = "Pre-shift")
-summary(refmodel)
-reflog %>% ggplot(aes(x = hours, y = OD560)) + geom_point() + geom_line(data = refmodel.df, aes(x = hours, y = OD560), color = "red")+ ylim(c(0,0.5)) 
-```
+all_of_curve <- all_of_curve %>% subset(!(loop > min(loopbreaks) + min(endofexp))) 
 
-```{r}
-mutlog <- growth_data %>% subset( Strain == "YGR067C" & Phase == "Pre-shift" & hours > 0 & hours < 12)
-mutmodel <- lm(log(mutlog$OD560) ~ mutlog$hours)
-mutmodel.df <- data.frame(hours = mutlog$hours, OD560 =exp(fitted(mutmodel))) %>% unique() %>% mutate(Strain = "YGR067C") %>% mutate(Phase = "Pre-shift")
-summary(mutmodel)
-mutlog %>% ggplot(aes(x = hours, y = OD560)) + geom_point() + geom_line(data = mutmodel.df, aes(x = hours, y = OD560), color = "red")+ ylim(c(0,0.5)) 
-```
+perplate <- all_of_curve %>% group_by(loop, Strain) %>% summarise(medOD = median(OD560))
 
-```{r}
-# Double logit fitting
-reflog <- growth_data %>% subset( Strain == "WT" & Phase == "Post-shift" )
+smc <- perplate %>% ungroup() %>% group_by(Strain) %>% arrange(Strain) %>% mutate(mm5 = rollapply(medOD, 6, median, fill = NA, align = "center"), mad5 = rollapply(medOD,6, mad, fill = NA, align = "center")) %>% mutate(adjhours = loop/3)
 
-test <- nls(OD560 ~ Y0 + (Y1-Y0)/(1+exp(-u1*(hours-mid1))), reflog, start = list(Y0 = 0.05, Y1 = 0.1, mid1 = 10,  u1 = 0.3))
-timepredict <- data.frame(hours = seq(0,24, by =0.2))
-reflog.predict <- data.frame(hours = seq(0,24, by =0.2), OD560 = predict(test, timepredict))
-
-ggplot(reflog, aes(x = hours, y = OD560)) + geom_point(color="salmon") + ylim(0,0.5) + geom_line(data=reflog.predict, aes(x = hours, y = OD560), size = 1)
-```
-
-```{r}
-# Double logit fitting
-mutlog <- growth_data %>% subset( Strain == "YGR067C" & Phase == "Post-shift" )
-test2 <- nls(OD560 ~ Y0 + (Y1-Y0)/(1+exp(-u1*(hours-mid1))), mutlog, start = list(Y0 = 0.05, Y1 = 0.1, mid1 = 10,  u1 = 0.3))
-
-timepredict <- data.frame(hours = seq(0,24, by =0.2))
-mutlog.predict <- data.frame(hours = seq(0,24, by =0.2), OD560 = predict(test2, timepredict))
-
-ggplot(mutlog, aes(x = hours, y = OD560)) + geom_point(color="cyan3") + ylim(0,0.5) + geom_line(data=mutlog.predict, aes(x = hours, y = OD560), size = 1, linetype = "dashed")
-```
-
-```{r}
-# Double logit fitting
-both <- growth_data %>% subset(Phase == "Post-shift" )　%>% mutate(Strain = as.factor(Strain))
-ggplot(both, aes(x = hours, y = OD560, colour = Strain)) + geom_point() + ylim(0,0.4)
-test2 <- nls(OD560 ~ cbind(Y0 + (Y1-Y0)/(1+exp(u*(hours - t05))), mStrain),both, start=list(Y0 = 0.05, Y1 = 0.25, t05 = 10, u = 0.1), algorithm = "plinear")
-```
-
-```{r}
-test <- growth_data %>% subset( Phase == "Pre-shift" & hours > 0 & hours < 12) %>% mutate( Strain = as.factor(Strain))
-
-modeltest <- lm(log(OD560) ~ Strain * hours, data= test)
-beta.hat <- modeltest$coefficients
-refmod <- data.frame(hours = unique(test$hours)) %>% mutate(OD560 = exp(beta.hat[1] + beta.hat[2] * 0 + beta.hat[3] * hours + beta.hat[4] * hours * 0))
-mutmod <- data.frame(hours = unique(test$hours)) %>% mutate(OD560 = exp(beta.hat[1] + beta.hat[2] * 1 + beta.hat[3] * hours + beta.hat[4] * hours * 1))
-
-
-p1 <- test %>% ggplot(aes(x = hours, y = OD560, color = Strain)) + geom_point(alpha = 0.6, size = 3) + geom_line(data = refmod, aes(x = hours, y = OD560, color = "WTfit"), linewidth = 1.5, linetype = "dashed")+ geom_line(data = mutmod, aes(x = hours, y = OD560, color = "YGR067Cfit"), linewidth = 1.5, linetype = "solid")+ylim(c(0,0.5))+ xlim(c(0,12)) +  scale_color_manual(name = "Measured and fitted values", values = c("WT" = "#00BFC4", "YGR067C" = "#F8766D", "WTfit" = "black", "YGR067Cfit" = "black") )+ theme_classic(base_size = 26) + theme(legend.position = "none")
-
-p2 <- test %>% ggplot(aes(x = hours, y = OD560, color = Strain)) + geom_point(alpha = 0.3) + ylim(c(0,0.5))
-
-p3 <- test[test$Strain == "WT",] %>% ggplot(aes(x = hours, y = OD560, color = Strain)) + geom_point(alpha = 0.4) + geom_line(data = refmod, aes(x = hours, y = OD560, color = "WTfit"), linewidth = 1.05, linetype = "dashed")+ylim(c(0,0.5))+ scale_color_manual(name = "Measured and fitted values", values = c("WT" = "#F8766D", "WTfit" = "black"))
-
-p4 <- test[test$Strain == "YGR067C",] %>% ggplot(aes(x = hours, y = OD560, color = Strain)) + geom_point(alpha = 0.4) + geom_line(data = mutmod, aes(x = hours, y = OD560, color = "YGR067Cfit"), linewidth = 1.05, linetype = "dotted")+ylim(c(0,0.5))+ scale_color_manual(name = "Measured and fitted values", values = c("YGR067C" = "#00BFC4", "YGR067Cfit" = "black"))
+sp <- ggplot(smc, aes(x = adjhours, y = mm5, color = Strain)) + geom_line(size = 1.5) + scale_color_manual(values = c("#FF61CC", "#00BE67")) + geom_vline(xintercept = 11.5, linetype = "dotted", colour = "black") + ylab("Rolling median of OD560 (k=5)") + xlab("Adjusted time (hours)") + theme_classic() 
+sp
 ```
 
 ```{r Amiga processing}
@@ -174,41 +84,11 @@ mapply(write.table, x = platemaps, file =paste0(ppath, "/mapping/", names(plates
 ```
 
 ```{r}
-mylets <- toupper(letters[1:16][c(F,T)])
-mynums <- sprintf("%02d", seq(24)) %>% subset(c(T,F))
-onlyWTpost <- as.vector(outer(mylets, mynums, paste, sep=""))
-plate_1 <- plates$plate_1
-fake_96 <- plate_1[plate_1$Time %in% onlyWTpost,] %>% mutate(Time = as.vector(t(outer(toupper(letters[1:8]), sprintf("%02d", seq(12)), paste, sep=""))))
-```
-
-```{r}
-read_all_data <- function(dir) {
-  files <- list.files(dir, pattern = "(plate)_[0-9]_summary.txt", full.names = TRUE)
-  all_df <- lapply(files, read.table, header = TRUE, fill = F, sep = "\t",skip = 0)
-  return(all_df)
-}
-```
-
-```{r}
 all_data <- read_all_data("./Growth_curve/Amiga/summary")
 ```
 
 ```{r}
-get_growthrates <- function(input, groupss, dix = T) {
-
-  out <- data.frame()
-  for (i in groupss) {
-    tmp <- input %>% subset(Group == i ) %>% dplyr::select(Plate_ID, Isolate, gr, Well)
-    colnames(tmp) <- c(tmp[1,1], "Isolate", "gr")
-    out <- rbind(out, tmp)
-  }
-  
-  return(out)
-}
-```
-
-```{r}
-gglist <- lapply(all_data, get_growthrates, c(3,4))
+gglist <- lapply(all_data, get_param, c(3,4), "gr")
 glist <- gglist
 for (i in seq_along(glist)) {
   colnames(glist[[i]]) = c("Plate_ID", "Isolate", "gr", "Well")
@@ -216,176 +96,77 @@ for (i in seq_along(glist)) {
 glist <- bind_rows(glist)
 ```
 
-
-```{r}
-permutation.test <- function(treatment, outcome, original, n){
-  distribution=c()
-  result=0
-  for(i in 1:n){
-    distribution[i]=diff(by(outcome, sample(treatment, length(treatment), FALSE), median))
-  }
-
-  result=(1+sum(abs(distribution) >= abs(original)))/(n)
-  return(list(result, distribution))
-}
-```
-
-```{r}
-boot.test <- function(treatment, outcome, original, samplesize, n){
-  distribution=c()
-  result=0
-  grps <- unique(treatment)
-  for(i in 1:n){
-    distribution[i]=diff(by(sample(outcome, 2*samplesize, T), sample(rep(grps, samplesize), 2*samplesize, T), mean))
-  }
-
-  result=(1+sum(abs(distribution) >= abs(original)))/(n)
-  return(list(result, distribution))
-}
-```
-
-```{r}
-meandiff <- function(x,i) {
-  E <- x[i,]
-  return(mean(E$YGR067C_ko)-mean(E$BY4741))
-}
-```
-
 ```{r}
 glistdata <- data.frame(BY4741 = glist[glist$Isolate =="BY4741",]$gr, YGR067C_ko = glist[glist$Isolate == "YGR067C_ko",]$gr)
 ```
 
-
 ```{r}
-rosses.test <- function(input, samplesize, n){
-  
-  count = 0
-  for(i in 1:n){
-    ref <- input[sample(which(input[,2] == "BY4741"), samplesize, F),]
-    mut <- input[sample(which(input[,2] == "YGR067C_ko"), samplesize, F),]
-    count <- count + ifelse(mean(ref[,3])>mean(mut[,3]), 1, 0)
-  }
-
-  pval <- (1+count)/n
-  return(list(count, pval))
+ODMlist <- lapply(all_data, get_param, c(3,4), "OD_Max")
+ODlist <- ODMlist
+for (i in seq_along(ODlist)) {
+  colnames(ODlist[[i]]) = c("Plate_ID", "Isolate", "OD_Max", "Well")
 }
-```
-
-```{r}
-rosses.test2 <- function(input, samplesize, n){
-  
-  clist <- c()
-  for (j in 1:n) {
-    count = 0
-    ref <- input[sample(which(input[,2] == "BY4741"), samplesize, F),]
-    mut <- input[sample(which(input[,2] == "YGR067C_ko"), samplesize, F),]
-    for(i in 1:samplesize) {
-      count <- count + ifelse(ref[i,3]>mut[i,3], 1, 0)
-    }
-    clist <- c(clist, count)
-  }
-  ratios <- (clist)/samplesize
-  return(list(clist, mean(ratios)))
-}
+ODlist <- bind_rows(ODlist)
 ```
 
 ```{r}
 set.seed(2021)
 
-original <- diff(tapply(glist$gr, glist$Isolate, mean))
+original_g <- diff(tapply(glist$gr, glist$Isolate, mean))
+original_ODM <- diff(tapply(ODlist$OD_Max,ODlist$Isolate, mean))
 
-test1 <- permutation.test(glist$Isolate, glist$gr, original, 10000)
+growth_perm_test <- permutation.test(glist$Isolate, glist$gr, original_g, 10000)
 
-# test2 <- boot.test(glist$Isolate, glist$gr, original, 300, 10000)
-
-# test3 <- rosses.test(glist, 300, 10000)
-# test4 <- rosses.test2(glist, 300, 100)
-```
-
-
-```{r}
-test1g <- test1[[2]] %>% as.data.frame()
-colnames(test1g) <- c("Perms")
-testplot1 <- ggplot(test1g, aes(x =Perms)) + geom_histogram() + geom_vline(xintercept = original, color = "red") + theme_bw() + xlab("Difference in growth rate between groups")
+MaxOD_perm_test <- permutation.test(ODlist$Isolate, ODlist$OD_Max, original_ODM, 10000)
 ```
 
 ```{r}
-test2g <- test2[[2]] %>% as.data.frame()
-colnames(test2g) <- c("Perms")
-testplot2 <- ggplot(test2g, aes(x =Perms)) + geom_histogram() + geom_vline(xintercept = original, color = "red") + theme_bw() + xlab("Difference in growth rate between groups")
+growth_perm_test_g <- growth_perm_test[[2]] %>% as.data.frame()
+colnames(growth_perm_test_g) <- c("Perms")
+n <- growth_perm_test[[2]] %>% length()
+
+annotation <- data.frame(
+   x = c(original_g-0.0025),
+   y = c(1000),
+   label = c(paste0("∆µ = ", round(original_g,3)))
+)
+
+
+growth_perm_plot<- ggplot(growth_perm_test_g, aes(x =Perms)) + geom_histogram(fill = "grey70", color = "black") + geom_vline(xintercept = original_g, color = "#C77CFF", size = 1.2, linetype= 5) +  xlab("∆µ (Reference strain - YGR067C∆)") + ylab("Count") + scale_y_continuous(expand = expansion(add = c(0,100), mult = c(0,0))) + geom_text(data = annotation, aes(x = x, y = y, label = label), color = "#C77CFF", size = 5, angle = 90, fontface = "bold") + theme_classic()
+
+growth_perm_plot
 ```
 
 ```{r}
-muht <- t.test(outcome~treatment)
-```
+MaxOD_perm_test_g <- MaxOD_perm_test[[2]] %>% as.data.frame()
+colnames(MaxOD_perm_test_g) <- c("Perms")
+n <- MaxOD_perm_test[[2]] %>% length()
+
+annotation <- data.frame(
+   x = c(original_ODM-0.0025),
+   y = c(1000),
+   label = c(paste0("∆OD_Max = ", round(original_ODM,3)))
+)
 
 
-```{r}
-set.seed(2021)
-d <- as.data.frame(cbind(rnorm(1:20, 500, 50), c(rep(0, 10), rep(1, 10))))
-treatment <- d$V2
-outcome <- d$V1
+MaxOD_perm_test_plot <- ggplot(MaxOD_perm_test_g, aes(x =Perms)) + geom_histogram(fill = "grey70", color = "black") + geom_vline(xintercept = original_ODM, color = "#C77CFF", size = 1.2, linetype= 5) +  xlab("∆OD_Max (Reference strain - YGR067C∆)") + ylab("Count") + scale_y_continuous(expand = expansion(add = c(0,100), mult = c(0,0))) + geom_text(data = annotation, aes(x = x, y = y, label = label), color = "#C77CFF", size = 5, angle = 90, fontface = "bold") + theme_classic()
 
-original <- diff(tapply(outcome, treatment, mean))
-mean(outcome[treatment==1])-mean(outcome[treatment==0])
-```
-
-
-```{r}
-plist <- lapply(gglist, function(x) ggplot(data = x, aes(x = gr, fill = Isolate)) + geom_density(alpha = 0.25) + ggtitle(colnames(x)[1]) + theme_bw())
-
-p <- do.call(grid.arrange, plist)
-
-```
-
-```{r}
-# ppath <- "/Users/cid/Documents/Erik_Genesis_Project/3.Transcriptomics/Analysis/EVE_exp/Growth_curve/gcplyr"
-
-full_curve <- growth_data %>% subset(plate != "minimal") %>% mutate(hours = hours * 3600) %>% rename(seconds = hours) %>% mutate(plate = as.numeric(plate)) %>% mutate(Group = 1+(Strain == "YGR067C")+2*(Phase == "Post-shift")) %>% mutate(Replicate = floor(0.5 + plate/2))
-
-# Removes weird sampling point OD and correct loop number
-full_curve_without_sampling_point <- full_curve %>% mutate(loop = loop + 35*(seconds >= 41552))  
-
-#%>% mutate(Group = as.character(Group)) %>% mutate(Group = case_when(Group == "1" ~ "Reference log-phase sampled", Group == "2" ~ "YGR067C_ko log-phase sampled", Group == "3" ~ "Reference PDS-phase sampled", Group == "4" ~ "YGR067C_ko PDS-phase sampled", TRUE ~ Group))
-
-average_loop_time <- full_curve_without_sampling_point %>% group_by(loop) %>% summarize(seconds = mean(seconds)) %>% as.data.frame()
-
-median_curve <- full_curve_without_sampling_point %>% mutate(seconds = average_loop_time[loop,2]) %>% subset(!(loop %in% 34:36)) %>% group_by(Group, Replicate, seconds) %>% summarize( median_OD = median(OD560)) %>% filter(seconds/3600 >= 1.5)
-
-for (i in 1:4) {
-  for (j in 1:3) {
-    median_curve[median_curve$Group == i &  median_curve$Replicate == j, ]$median_OD <- median_curve[median_curve$Group == i &  median_curve$Replicate == j, ]$median_OD - min(median_curve[median_curve$Group == i &  median_curve$Replicate == j, ]$median_OD)
-  }
-  
-}
-
-
-# median_curve <- median_curve 
-
-# colnames(median_curve) <- c("Group", "Replicate", "loop", "seconds", "median_OD")
-
-# median_curve <- median_curve %>% subset(seconds <= 43000 | seconds >= 45500)
-```
-
-```{r}
-growths <- ggplot(median_curve %>% subset(Group %in% c(3,4) ), aes(x = seconds/3600, y = median_OD, colour = factor(Group), shape = factor(Replicate))) + geom_point() + theme_bw() + xlab("hours") + labs(colour = "Strain", shape = "Replicate")
-growths
-```
-
-```{r}
-amiga <- median_curve %>% mutate(Sample = paste0(Group, ".", Replicate)) %>% relocate(Sample, .after = Replicate)
-
-amiga <- reshape2::dcast(amiga, Sample ~ seconds, value.var = "median_OD")
-
-amiga <- amiga[, colSums(is.na(amiga)) == 0]
-```
-
-```{r}
-amiga_data <- amiga %>% mutate(Sample = paste0("A", sprintf("%02d", seq(12)))) %>% rename(Time = Sample)
-amiga_map <- data.frame(Well = paste0("A", sprintf("%02d", seq(12))), Plate_ID = rep(1), Isolate = rep(rep(c("WT","YGR067C"), each =3), 2), Comments = paste0(rep(rep(c("WT","YGR067C"), each =3), 2),"_",rep(c("Pre-shift","Post-shift"), each=6)), Group = rep(1:4, each=3), Replicate = rep(seq(3),4), Control = rep(0)) 
+MaxOD_perm_test_plot
 ```
 
 ```{r}
 write.table(amiga_data, file = paste0(ppath,"/data/","Combined_curves.txt"), sep ="\t", quote = F, row.names = F)
 write.table(amiga_map, file = paste0(ppath,"/mapping/","Combined_curves.txt"), sep ="\t", quote = F, row.names = F)
+```
+
+```{r}
+svglite(file = "./out/Fig_2A.svg", width = 7, height = 8)
+sp
+dev.off()
+```
+
+```{r}
+svglite(file = "./out/Fig_2B.svg", width = 7, height = 8)
+plot(growth_perm_plot)
+dev.off()
 ```
