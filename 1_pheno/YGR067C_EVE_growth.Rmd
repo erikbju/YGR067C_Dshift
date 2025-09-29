@@ -25,7 +25,7 @@ sapply(file.sources, source, .GlobalEnv)
 ```
 
 ```{r Growth curves}
-growth_data <- read.csv("./Growth_curve/all_measurements.csv", sep = ",", quote="")
+growth_data <- read.csv("./data/all_measurements.csv", sep = ",", quote="")
 str_sub(growth_data$sample_phase, 1, 1) <- str_sub(growth_data$sample_phase, 1, 1) %>% str_to_upper()
 colnames(growth_data) = c("dt", "test_name", "loop", "plate", "well", "OD560", "hours", "row", "column", "quadrant", "Strain", "Phase")
 ```
@@ -45,19 +45,25 @@ all_of_curve <- growth_data %>% subset(Phase == "Post-shift") %>% mutate(plate =
 
 
 
-all_of_curve <- all_of_curve %>% subset(!(loop > min(loopbreaks) + min(endofexp))) 
+all_of_curve <- all_of_curve %>% subset(!(loop > min(loopbreaks) + min(endofexp))) %>% subset(plate %in% seq(6)) %>% mutate(Replicate = paste0(plate, "_", well))
 
 perplate <- all_of_curve %>% group_by(loop, Strain) %>% summarise(medOD = median(OD560))
 
 smc <- perplate %>% ungroup() %>% group_by(Strain) %>% arrange(Strain) %>% mutate(mm5 = rollapply(medOD, 6, median, fill = NA, align = "center"), mad5 = rollapply(medOD,6, mad, fill = NA, align = "center")) %>% mutate(adjhours = loop/3)
 
-sp <- ggplot(smc, aes(x = adjhours, y = mm5, color = Strain)) + geom_line(size = 1.5) + scale_color_manual(values = c("#FF61CC", "#00BE67")) + geom_vline(xintercept = 11.5, linetype = "dotted", colour = "black") + ylab("Rolling median of OD560 (k=5)") + xlab("Adjusted time (hours)") + theme_classic() 
+sp <- ggplot() + geom_line(data = all_of_curve, aes(x = hours, y = OD560, group = Replicate, color = Strain), alpha = 0.035) + 
+  geom_line(data = smc, aes(x = adjhours, y = mm5, color = Strain), size = 2) +
+  scale_color_manual(values = c("#FF61CC", "#00BE67")) +
+  geom_vline(xintercept = 11.5, linetype = "dotted", colour = "black") +
+  geom_vline(xintercept = 23.8, linetype = "dotted", colour = "black") +
+  ylab("Rolling median of OD560 (k=5)") + xlab("Adjusted time (hours)") +
+  xlim(1.5,24) + ylim(0,0.45) + theme_classic() 
 sp
 ```
 
 ```{r Amiga processing}
 
-ppath <- "./Growth_curve/Amiga"
+ppath <- "./data/Amiga"
 
 full_curve <- growth_data %>% mutate(hours = hours * 3600) %>% rename(seconds = hours) %>% mutate(plate = as.numeric(plate)) %>% subset(!(loop %in% c(1,2) & seconds > 5000)) %>% subset(!(seconds < 5400))
 
@@ -84,7 +90,7 @@ mapply(write.table, x = platemaps, file =paste0(ppath, "/mapping/", names(plates
 ```
 
 ```{r}
-all_data <- read_all_data("./Growth_curve/Amiga/summary")
+all_data <- read_all_data("./data/Amiga/summary")
 ```
 
 ```{r}
@@ -155,18 +161,17 @@ MaxOD_perm_test_plot
 ```
 
 ```{r}
-write.table(amiga_data, file = paste0(ppath,"/data/","Combined_curves.txt"), sep ="\t", quote = F, row.names = F)
-write.table(amiga_map, file = paste0(ppath,"/mapping/","Combined_curves.txt"), sep ="\t", quote = F, row.names = F)
+wb <- createWorkbook()
+addWorksheet(wb, "Growth_data")
+writeData(wb, "Growth_data", growth_data, keepNA = T)
+saveWorkbook(wb, "../out/Tables/S_table_1.xlsx")
 ```
 
 ```{r}
-svglite(file = "./out/Fig_2A.svg", width = 7, height = 8)
-sp
-dev.off()
+ggsave(sp,
+       filename="../out/Figures/Fig_2A.pdf",
+       device = "pdf",
+       height = 5, width = 12, units = "in")
 ```
 
-```{r}
-svglite(file = "./out/Fig_2B.svg", width = 7, height = 8)
-plot(growth_perm_plot)
-dev.off()
-```
+

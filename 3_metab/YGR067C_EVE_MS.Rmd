@@ -19,6 +19,7 @@ library(cowplot)
 library(readxl)
 library(gridExtra)
 library(svglite)
+library(reshape2)
 
 library(doParallel)
 registerDoParallel(cores=4)
@@ -88,7 +89,12 @@ imputed_list <- readRDS("./r_objects/imputed_list.rds")
 ```
 
 ```{r}
-grps <- unique(merged_nonorm_RDS50$Group)
+merged <- merge_metabosets(imputed_list)
+```
+
+
+```{r}
+grps <- unique(imputed_list[[1]]$Group)
 cmb <- combn(grps,2)
 cmb <- cmb[,substring(cmb[1,],3,3) == substring(cmb[2,],3,3) | substring(cmb[1,],4,6) == substring(cmb[2,],4,6)]
 ```
@@ -97,7 +103,7 @@ cmb <- cmb[,substring(cmb[1,],3,3) == substring(cmb[2,],3,3) | substring(cmb[1,]
 contrasts_RDS50 <- list()
 
 for (i in 1:ncol(cmb)) {
-  contrasts_RDS50[[paste0(cmb[,i], collapse = "_")]] <- merged_nonorm_RDS50[, merged_nonorm_RDS50$Group %in% cmb[,i]]
+  contrasts_RDS50[[paste0(cmb[,i], collapse = "_")]] <- imputed_list[[1]]$Group[, imputed_list[[1]]$Group$Group %in% cmb[,i]]
 } 
 ```
 
@@ -143,16 +149,6 @@ all_metab <- read.csv("./data/db/all_metab_KEGG.csv")
 ```
 
 ```{r}
-MAF_POS <- get_MAFS(ALLPO[-(1:4), ], all_metab)
-MAF_NEG <- get_MAFS(ALLNE[-(1:4), ], all_metab)
-```
-
-```{r}
-write.table(MAF_POS, file = "./out/m_REQ20250616211240_LC-MS_positive_reverse-phase_metabolite_profiling_v2_maf.tsv", sep = "\t", row.names = F)
-write.table(MAF_NEG, file = "./out/m_REQ20250616211240_LC-MS_negative_reverse-phase_metabolite_profiling_v2_maf.tsv", sep = "\t", row.names = F)
-```
-
-```{r}
 PDS1 <- merge(SMALLPOS, CvD$POS, by.x = "Alignment ID", by.y = "Alignment_ID")
 PDS2 <- merge(SMALLNEG, CvD$NEG, by.x = "Alignment ID", by.y = "Alignment_ID")
 PDS3 <- rbind(PDS1,PDS2)
@@ -175,13 +171,13 @@ metab_names_PDS <- get_unique_metab_names(PDS3)
 
 
 ```{r}
-write.table(metab_names_log, file = "./out/metab_names_log.txt", sep = "\t", row.names = F)
-write.table(metab_names_PDS, file = "./out/metab_names_PDS.txt", sep = "\t", row.names = F)
+yeast9compounds <- read_xlsx("./data/db/yeast-GEM.xlsx", sheet = "METS")
+yeast9keggs <- str_split_fixed(str_split_fixed( yeast9compounds$MIRIAM, ";",5) %>% melt() %>% subset(grepl("kegg.compound", value)) %>% pull(value), "/", 2)[,2] %>% unique()
 ```
 
 ```{r}
-metab_names_log <- read.table(file = "./out/metab_names_log.txt", header=T)
-metab_names_PDS <- read.table(file = "./out/metab_names_PDS.txt", header=T)
+log_RDS50_final <- merge(all_metab %>% dplyr::select(Query, KEGG), metab_names_log, by.x = "Query", by.y = "Metabolite name") %>% subset(KEGG %in% yeast9keggs)
+PDS_RDS50_final <- merge(all_metab %>% dplyr::select(Query, KEGG), metab_names_PDS, by.x = "Query", by.y = "Metabolite name") %>% subset(KEGG %in% yeast9keggs)
 ```
 
 ```{r}
@@ -197,15 +193,38 @@ for (i in seq_along(lm_filtered)) {
 }
 leg <- g_legend(p_list[[1]])
 pvolcmetab <-grid.arrange(p_list[[1]] + theme(legend.position = "none"), p_list[[2]] + theme(legend.position =  "none"), nrow = 2)
-fig2c <- plot_grid(pvolcrna, pvolcmetab, leg, ncol = 3, rel_widths = c(1,1,0.2))
+fig2b <- plot_grid(pvolcrna, pvolcmetab, leg, ncol = 3, rel_widths = c(1,1,0.2))
+```
+
+
+
+```{r}
+# Supplementary table 4.1 - Prediction metabolites
+pred_metabs <- read_csv(file = "./data/db/predicted_metabs.csv")
+hypothesis_gluc_metab <- list()
+hypothesis_etoh_metab <- list()
+
+for (i in seq(length(ntest))) {
+  if (length(ntest[[i]]$compounds) == 0) {next}
+  tmp <- data.frame(KEGG_ID = ntest[[i]]$compounds)
+  tmp <- merge(tmp, pred_metabs, by = "KEGG_ID")
+  tmp <- tmp %>% mutate(Identified = if_else(KEGG_ID %in% all_metab$KEGG, "YES", "NO")) %>% mutate(QC = if_else(Identified == "NO", NA, if_else(KEGG_ID %in% log_RDS50_final$KEGG, "PASS", "FAIL")))
+  hypothesis_gluc_metab[[names(naive_test)[i]]] <- tmp 
+  hypothesis_gluc_metab[[names(naive_test)[i]]]  <- merge(hypothesis_gluc_metab[[names(naive_test)[i]]] , log_RDS50_final %>% dplyr::select(KEGG, l2fc, p), by.x = "KEGG_ID", by.y = "KEGG", all.x = T) 
+}
+
+for (i in seq(length(ntest))) {
+  if (length(ntest[[i]]$compounds) == 0) {next}
+  tmp <- data.frame(KEGG_ID = ntest[[i]]$compounds)
+  tmp <- merge(tmp, pred_metabs, by = "KEGG_ID")
+  tmp <- tmp %>% mutate(Identified = if_else(KEGG_ID %in% all_metab$KEGG, "YES", "NO")) %>% mutate(QC = if_else(Identified == "NO", NA, if_else(KEGG_ID %in% PDS_RDS50_final$KEGG, "PASS", "FAIL")))
+  hypothesis_etoh_metab[[names(naive_test)[i]]] <- tmp 
+  hypothesis_etoh_metab[[names(naive_test)[i]]]  <- merge(hypothesis_etoh_metab[[names(naive_test)[i]]] , PDS_RDS50_final %>% dplyr::select(KEGG, l2fc, p), by.x = "KEGG_ID", by.y = "KEGG", all.x = T) 
+}
 ```
 
 ```{r}
-yeast9compounds <- read_xlsx("./data/db/yeast-GEM.xlsx", sheet = "METS")
-yeast9keggs <- str_split_fixed(str_split_fixed( yeast9compounds$MIRIAM, ";",5) %>% melt() %>% subset(grepl("kegg.compound", value)) %>% pull(value), "/", 2)[,2] %>% unique()
-```
-
-```{r}
+# Fig 2D - FELLA graph
 grapha <- buildGraphFromKEGGREST(organism = "sce")
 tmpdir <- paste0(tempdir(), "/my_database")
 unlink(tmpdir, recursive = TRUE)
@@ -217,10 +236,7 @@ fella.data <- loadKEGGdata(databaseDir = tmpdir,internalDir = FALSE,loadMatrix =
 set.seed(20120)
 analysis.ds1 <- defineCompounds(compounds = log_RDS50_final %>% subset(p<0.1) %>% pull(KEGG), data=fella.data)
 analysis.ds1 <- runDiffusion(object = analysis.ds1,data = fella.data,approx = "normality")
-```
 
-```{r}
-set.seed(20120)
 nlimit <- 300
 vertex.label.cex <- 1
 fellap <- plot(analysis.ds1,method = "diffusion", data = fella.data, nlimit = nlimit, vertex.label.cex = vertex.label.cex, threshold = 0.05,vertex.size=30)
@@ -232,10 +248,7 @@ tab.all1[tab.all1$Entry.type == 'pathway',]
 set.seed(20120)
 analysis.ds2 <- defineCompounds(compounds = PDS_RDS50_final %>% subset(p<0.1) %>% pull(KEGG), data=fella.data)
 analysis.ds2 <- runDiffusion(object = analysis.ds2,data = fella.data,approx = "normality")
-```
 
-```{r}
-set.seed(20120)
 nlimit <- 300
 vertex.label.cex <- 1
 fellap2 <- plot(analysis.ds2,method = "diffusion", data = fella.data, nlimit = nlimit, vertex.label.cex = vertex.label.cex, threshold = 0.05,vertex.size=30)
@@ -244,27 +257,78 @@ tab.all2[tab.all2$Entry.type == 'pathway',]
 ```
 
 ```{r}
-log_RDS50_final <- merge(all_metab %>% dplyr::select(Query, KEGG), metab_names_log_RDS50, by.x = "Query", by.y = "Metabolite name") %>% subset(KEGG %in% yeast9keggs)
-
-PDS_RDS50_final <- merge(all_metab %>% dplyr::select(Query, KEGG), metab_names_PDS_RDS50, by.x = "Query", by.y = "Metabolite name") %>% subset(KEGG %in% yeast9keggs)
+# S table 3.1 - POS and NEG alignment data
+wb <- createWorkbook()
+addWorksheet(wb, "POS")
+addWorksheet(wb, "NEG")
+writeData(wb, "POS", ALLPO, keepNA = T)
+writeData(wb, "NEG", ALLNE, keepNA = T)
+saveWorkbook(wb, file = "../out/Tables/S_table_3_1.xlsx")
 ```
 
 ```{r}
-write.table(all_log_RDS50_final, file = "./out/log_RDS50.txt", sep = "\t",
-            quote = F,row.names = F)
-
-write.table(all_PDS_RDS50_final, file = "./out/PDS_RDS50.txt", sep = "\t",
-            quote = F,row.names = F)
+# S table 3.2 - Univariate stat analysis
+wb <- createWorkbook()
+addWorksheet(wb, "Glucose_phase")
+addWorksheet(wb, "Ethanol_phase")
+writeData(wb, "Glucose_phase", log_RDS50_final, keepNA = T)
+writeData(wb, "Ethanol_phase", PDS_RDS50_final, keepNA = T)
+saveWorkbook(wb, file = "../out/Tables/S_table_3_2.xlsx")
 ```
 
 ```{r}
-svglite(file = "./out/fig2c.svg", width = 7, height = 8)
-fig2c
+# S table 4.1 (metabolomics)
+
+wb <- loadWorkbook(file = "../out/Tables/S_table_4_1.xlsx")
+
+for (i in 1:length(hypothesis_gluc_metab)) {
+  writeData(wb, "Glucose_phase_metabolomics", names(hypothesis_gluc_metab)[i], startCol=7*i-6)
+  writeData(wb, "Glucose_phase_metabolomics", hypothesis_gluc_metab[[i]], startRow = 2, startCol=7*i-6, keepNA = T)
+  if (i<4) {
+   conditionalFormatting(wb, "Glucose_phase_metabolomics", cols = (1:6)+(7*i-7), rows = 2:70, rule=paste0("$", LETTERS[7*i-1], "2<0.05"), style = sigstyle)
+  }
+}
+
+for (i in 1:length(hypothesis_etoh_metab)) {
+  writeData(wb, "Ethanol_phase_metabolomics", names(hypothesis_etoh_metab)[i], startCol=7*i-6)
+  writeData(wb, "Ethanol_phase_metabolomics", hypothesis_etoh_metab[[i]], startRow = 2, startCol=7*i-6, keepNA = T)
+  if (i<4) {
+   conditionalFormatting(wb, "Ethanol_phase_metabolomics", cols = (1:6)+(7*i-7), rows = 2:70, rule=paste0("$", LETTERS[7*i-1], "2<0.05"), style = sigstyle)
+  }
+}
+
+saveWorkbook(wb, "../out/Tables/S_table_4_1.xlsx", overwrite = T)
+```
+
+```{r}
+# S table 5 - Topological enrichment
+wb <- loadWorkbook(file = "../out/Tables/S_table_5.xlsx")
+writeData(wb, "Glucose_phase_FELLA",tab.all1, keepNA = T)
+writeData(wb, "Ethanol_phase_FELLA",tab.all2, keepNA = T)
+saveWorkbook(wb, "../out/Tables/S_table_5.xlsx", overwrite = T)
+```
+
+```{r}
+ggsave(fig2b,
+       filename="../out/Figures/Fig_2B.pdf",
+       device = "pdf",
+       height = 5, width =11.5, units = "in")
+```
+
+```{r}
+set.seed(20120)
+pdf(file = "../out/Figures/Fig_2D.pdf")
+plot(analysis.ds2,method = "diffusion", data = fella.data, nlimit = nlimit, vertex.label.cex = vertex.label.cex, threshold = 0.05,vertex.size=30)
 dev.off()
 ```
 
 
 ```{r}
-log_RDS50_final <- read_tsv("./out/log_RDS50.txt")
-PDS_RDS50_final <- read_tsv("./out/PDS_RDS50.txt")
+MAF_POS <- get_MAFS(ALLPO[-(1:4), ], all_metab)
+MAF_NEG <- get_MAFS(ALLNE[-(1:4), ], all_metab)
+```
+
+```{r}
+write.table(MAF_POS, file = "./out/m_REQ20250616211240_LC-MS_positive_reverse-phase_metabolite_profiling_v2_maf.tsv", sep = "\t", row.names = F)
+write.table(MAF_NEG, file = "./out/m_REQ20250616211240_LC-MS_negative_reverse-phase_metabolite_profiling_v2_maf.tsv", sep = "\t", row.names = F)
 ```
