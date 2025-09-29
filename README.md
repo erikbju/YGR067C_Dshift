@@ -5,7 +5,7 @@ Last updated: 2025-07-01
 
 Connected paper can be found at:
 
-![Figure1](./Fig2.svg){width="100%"}
+![Figure1](./Fig1.pdf){width="100%"}
 
 The biological role of *YGR067C* in *Saccharomyces cerevisiae* was investigated by conducting robotically performed cultivation experiments. A reference strain (BY4741) and *YGR067C∆* strain were cultivated in minimal media and were sampled for RNA-seq at 12 hours (pre-diauxic shift/log-phase) and 24 hours (post-diauxic shift/PDS-phase). Growth data for the samples in these three experiments can be found in the connected paper.
 
