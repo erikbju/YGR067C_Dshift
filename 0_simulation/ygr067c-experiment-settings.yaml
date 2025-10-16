@@ -1,0 +1,42 @@
+name: 'YGR067C knockout simulation in LGEM+/FBA (Yeast9)'
+description: 'The hypothesis is that deletion of YGR067C
+  leads to disruption in respiration for yeast. We
+  test this hypothesis by perturbing the reaction
+  network for reactions in respiration pathways,
+  and observing the resultant metabolic and
+  transcriptomic profile.
+  
+  Perturbation in LGEM+ simulations by knocking
+  out a random subset of the reactions in the
+  specified input file. Metabolic profile is 
+  measured by extracting compounds involved in
+  the simulation of growth using LGEM+ (based 
+  on the `query.p` file in the theory directory).
+  
+  Perturbation in FBA simulations by knocking
+  out a random subset of the reactions in the
+  specified input file. Metabolic profile is 
+  measured by extracting compounds from each 
+  reaction that has a flux greater than the 
+  threshold specified.'
+inputs:
+  glucose-theory-directory: './lgem-theories/glucose/'
+  ethanol-theory-directory: './lgem-theories/ethanol/'
+  fba-model-xml: '../lgemplus/model-files/yeast9.xml'
+  gene-kos: []
+  reaction-kos: []
+  hypothesis-strain:
+    - YGR067C
+  hypothesis-reaction-set: './hypothesis/hypothesis.rxns'
+  metabolomics-glucose-csv: './empirical-data/Metab_diffexp_log.txt'
+  transcriptomics-glucose-csv: './empirical-data/RNA_diffexp_log.txt'
+  metabolomics-ethanol-csv: './empirical-data/Metab_diffexp_PDS.txt'
+  transcriptomics-ethanol-csv: './empirical-data/RNA_diffexp_PDS.txt'
+parameters:
+  min-reaction-subset-size: 5
+  max-reaction-subset-size: 12
+  extract-transcriptome: True
+  extract-metabolome: True
+  flux-threshold: 1.0e-9
+  number-of-simulations: 500
+output-root-directory: './experiment-outputs'
