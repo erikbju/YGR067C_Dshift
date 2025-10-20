@@ -1,0 +1,16 @@
+# Theory files information
+# ========================
+
+Base GEM ID:         yeastGEM_v9__46__0__46__2
+Base GEM filepath:   model-files/yeast9.xml
+Generation time:     2025-03-17T10:55:13Z
+
+Base deletants:      
+  - YBR115C
+  - YCL018W
+  - YEL021W
+  - YOR202W
+Growth medium:       ynb-ethanol
+
+Reverse reactions included:         True
+Compartmentless metabolites:        False
