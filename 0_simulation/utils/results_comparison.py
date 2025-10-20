@@ -9,7 +9,7 @@ from cobra.io import read_sbml_model
 sys.path.append("/usr/src/lgemplus/")
 from lgemcore.io import logical_model_from_sbml
 from lgemcore.pathways import calculate_pathway
-from fba_experiment import calculate_pathway_fba
+from utils.pathway_calculations import calculate_pathway_fba
 
 
 def results_list_to_df(l):
@@ -36,7 +36,7 @@ def results_comparison(
     transcriptomics_file,
     metabolomics_file,
     theory_directory=None,
-    fba_model_file="../lgemplus/model-files/yeast9.xml",
+    fba_model_file="/usr/src/lgemplus/model-files/yeast9.xml",
 ):
     ref, comp = results.keys()
     refdf, compdf = map(results_list_to_df, results.values())
@@ -127,7 +127,7 @@ if __name__ == "__main__":
         simulator,
         args.transcriptomics,
         args.metabolomics,
-        fba_model_file="../lgemplus/model-files/yeast9.xml",
+        fba_model_file="/usr/src/lgemplus/model-files/yeast9.xml",
     )
 
     T.to_csv("lgem_ethanol_tra.csv")

@@ -22,7 +22,7 @@ description: 'The hypothesis is that deletion of YGR067C
 inputs:
   glucose-theory-directory: './lgem-theories/glucose/'
   ethanol-theory-directory: './lgem-theories/ethanol/'
-  fba-model-xml: '../lgemplus/model-files/yeast9.xml'
+  fba-model-xml: '/usr/src/lgemplus/model-files/yeast9.xml'
   gene-kos: []
   reaction-kos: []
   hypothesis-strain:

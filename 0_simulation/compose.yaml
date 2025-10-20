@@ -1,0 +1,12 @@
+services:
+  iprover:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: "linux/amd64"
+    container_name: iprover
+    volumes:
+      - ../:/usr/src/YGR067C_Dshift
+    working_dir: /usr/src/YGR067C_Dshift
+    stdin_open: true
+    tty: true
