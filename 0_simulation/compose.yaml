@@ -1,12 +1,12 @@
 services:
-  iprover:
+  simulations:
     build:
       context: .
       dockerfile: Dockerfile
     platform: "linux/amd64"
-    container_name: iprover
+    container_name: ygr067c-simulations
     volumes:
       - ../:/usr/src/YGR067C_Dshift
-    working_dir: /usr/src/YGR067C_Dshift
+    working_dir: /usr/src/YGR067C_Dshift/0_simulation
     stdin_open: true
     tty: true
