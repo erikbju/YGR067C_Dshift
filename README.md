@@ -1,7 +1,7 @@
 # EVE
 Multiomic study of *YGR067C* in *S. cerevisiae* during the diauxic shift. This repository contains the code and intermediate data necessary to reproduce the analysis, figure, and table of the empirical study. Data deposition: RNA‐seq data has been submitted in the form of raw reads in the form of. fastq files under the accession number PRJEB60302 at the European Nucleotide Archive (ENA). Metabolomics data has been submitted in the form of derived spectral .mzML files under the accession number MTBLS12663 at the Metabolights. 
 
-Last updated: 2025-07-01
+Last updated: 2025-10-22
 
 Connected paper can be found at:
 
