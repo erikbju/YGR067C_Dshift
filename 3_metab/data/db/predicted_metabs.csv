@@ -1,0 +1,86 @@
+KEGG_ID,Metabolite_name
+C00022,Pyruvic acid
+C00122,Fumaric acid
+C00036,Oxalacetic acid
+C05379,Oxalosuccinic acid
+C00024,Acetyl-CoA
+C00149,Malic acid
+C00311,Isocitric acid
+C00417,cis-Aconitic acid
+C00042,Succinic acid
+C00158,Citric acid
+C15972,Enzyme N6-(lipoyl)lysine
+C00068,Thiamine pyrophosphate
+C16254,S-Succinyl- dihydrolipoamide-E
+C15973,Enzyme N6-(dihydrolipoyl)lysine
+C00091,Succinyl-CoA
+C00026,Oxoglutaric acid
+C05381,3-Carboxy-1-hydroxypropylthiamine diphosphate
+C05125,2-(a-Hydroxyethyl)thiamine diphosphate
+C16255,S-Acetyldihydrolipoamide-E
+C00074,Phosphoenolpyruvic acid
+C00080,Hydrogen Ion
+C00004,NADH
+C00003,NAD
+C00007,Oxygen
+C00001,Water
+C00008,ADP
+C00009,Phosphate
+C00013,Pyrophosphate
+C00536,Triphosphate
+C00002,Adenosine triphosphate
+C00898,Tartaric acid
+C04348,Malyl-CoA
+C03548,"trans-2,3-Epoxysuccinate"
+C00552,meso-Tartaric acid
+C03459,2-Hydroxy-3-oxosuccinate
+C00975,Dihydroxyfumaric acid
+C01146,Tartronate semialdehyde
+C00258,Glyceric acid
+C00988,Phosphoglycolic acid
+C00168,Hydroxypyruvic acid
+C00266,Glycolaldehyde
+C01380,Polyethylene glycol
+C00160,Glycolate
+C00048,Glyoxylic acid
+C00209,Oxalic acid
+C00058,Formic acid
+C00011,Carbon dioxide
+C02405,Formyl phosphate
+C06049,N-Formylderivatives
+C00798,Formyl-CoA
+C00313,oxalyl-CoA
+C01127,4-Hydroxy-2-oxoglutaric acid
+C01990,3-Oxalomalic acid
+C01989,3-Ethylmalate
+C02123,3-propylmalic acid
+C03217,2-hydroxy-3-oxoadipic acid
+C00888,Pentanoyl-CoA
+C00136,Butyryl-CoA
+C00332,Acetoacetyl-CoA
+C03561,3-Hydroxybutyryl-CoA
+C00877,Crotonoyl-CoA
+C18026,(S)-ethylmalonyl-CoA
+C18324,(2S)-Methylsuccinyl-CoA
+C06028,Mesaconyl-CoA
+C00683,S-Methylmalonyl-CoA
+C00100,Propionyl-CoA
+C06027,L-erythro-3-methylmalyl-CoA
+C01213,L-methylmalonyl-CoA
+C00037,Glycine
+C00014,Ammonia
+C00065,Serine
+C00197,D-Glycerate 3-phosphate
+C00027,Hydrogen peroxide
+C00025,Glutamic acid
+C00064,Glutamine
+C20238,(2R)-Ethylmalonyl-CoA
+C03618,L-threo-3-Methylaspartate
+C01732,Mesaconic acid
+C00631,2-Phospho-D-glyceric acid
+C00033,Acetic acid
+C22337,D-Ribulose 1-phosphate
+C00111,Dihydroxyacetone phosphate
+C01182,"D-Ribulose 1,5-bisphosphate"
+C00084,Acetaldehyde
+C00469,Ethanol
