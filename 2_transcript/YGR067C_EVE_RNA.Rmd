@@ -21,7 +21,7 @@ library(exact2x2)
 library(ggplot2)
 library(gridExtra)
 library(pathfindR)
-library(xlsx)
+library(openxlsx)
 ```
 
 ```{r}
@@ -61,7 +61,7 @@ names(files) <- str_replace(samples, "./data/EXP//","")
 # Imports count data from each quant.sf and names each gene using 
 # "salmon_tx2gene.tsv"
 txi <- tximport(files, type="salmon", 
-                tx2gene = tx2gene[,c("tx_id", "ensgene", "symbol")], 
+                tx2gene = tx2gene_adj[,c("tx_id", "ensgene", "symbol")], 
                 countsFromAbundance = "lengthScaledTPM",
                 importer = read.delim)
 # 
@@ -84,7 +84,7 @@ outliers = c("GMN-WT1", "GMN-WT2", "GMN-WT3", "GMN-MUT3", "G-WT5")
 files_clean <- files[!(names(files) %in% outliers)]
 
 txi_clean <- tximport(files_clean, type="salmon", 
-                tx2gene = tx2gene[,c("tx_id", "ensgene", "symbol")], 
+                tx2gene = tx2gene_adj[,c("tx_id", "ensgene", "symbol")], 
                 countsFromAbundance = "lengthScaledTPM")
 
 meta_clean <- meta[!(rownames(meta) %in% outliers),]
@@ -359,7 +359,7 @@ if (nrow(output_df_etoh) == 0) {
 ```
 
 ```{r}
-pathfind_enrich <- myenrich(output_df)
+pathfind_enrich <- myenrich(output_df_gluc)
 ```
 
 ```{r}
@@ -375,17 +375,21 @@ addWorksheet(wb, "Normalised_counts")
 addWorksheet(wb, "Raw_counts")
 writeData(wb, "Normalised_counts",normalized_counts_nice, keepNA = T)
 writeData(wb, "Raw_counts",raw_counts_nice, keepNA = T)
-saveWorkbook(wb, "../out/Tables/S_table_2_1.xlsx")
+saveWorkbook(wb, "../out/Tables/transcript_counts.xlsx")
 ```
 
 ```{r}
 # S table 2.2 - Diff exp of genes
 wb <- createWorkbook()
-addWorksheet(wb, "Glucose_phase")
-addWorksheet(wb, "Ethanol_phase")
-writeData(wb, "Glucose_phase",gluc_nice, keepNA = T)
-writeData(wb, "Ethanol_phase",etoh_nice, keepNA = T)
-saveWorkbook(wb, "../out/Tables/S_table_2_2.xlsx")
+addWorksheet(wb, "MUT.v.REF_gluc_tra")
+addWorksheet(wb, "MUT.v.REF_etoh_tra")
+addWorksheet(wb, "etoh.v.gluc_REF_tra")
+addWorksheet(wb, "etoh.v.gluc_MUT_tra")
+writeData(wb, "MUT.v.REF_gluc_tra", sig_glucose_nice, keepNA = T)
+writeData(wb, "MUT.v.REF_etoh_tra", sig_ethanol_nice, keepNA = T)
+writeData(wb, "etoh.v.gluc_REF_tra",sig_WT_nice, keepNA = T)
+writeData(wb, "etoh.v.gluc_MUT_tra",sig_MUT_nice, keepNA = T)
+saveWorkbook(wb, "../results/Tables/sig_expression_transcripts.xlsx")
 ```
 
 ```{r}
@@ -414,7 +418,7 @@ for (i in 1:length(hypothesis_etoh)) {
   }
 }
 
-saveWorkbook(wb, "../out/Tables/S_table_4_1.xlsx", overwrite = T)
+saveWorkbook(wb, "../results/Tables/prediction_vs_empirical_data.xlsx", overwrite = T)
 ```
 
 ```{r}
@@ -426,7 +430,7 @@ addWorksheet(wb, "Glucose_phase_FELLA")
 addWorksheet(wb, "Ethanol_phase_FELLA")
 writeData(wb, "Glucose_phase_pathfindR", output_df_gluc, keepNA = T)
 writeData(wb, "Ethanol_phase_pathfindR", output_df_etoh, keepNA = T)
-saveWorkbook(wb, "../out/Tables/S_table_5.xlsx")
+saveWorkbook(wb, "../results/Tables/exploratory_enrichment.xlsx")
 ```
 
 ```{r}

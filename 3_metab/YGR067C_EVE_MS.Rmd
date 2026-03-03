@@ -18,8 +18,8 @@ library(lemon)
 library(cowplot)
 library(readxl)
 library(gridExtra)
-library(svglite)
 library(reshape2)
+library(openxlsx)
 
 library(doParallel)
 registerDoParallel(cores=4)
@@ -161,6 +161,19 @@ log3 <- rbind(log1,log2)
 ```
 
 ```{r}
+ref1 <- merge(SMALLPOS, AvC$POS, by.x = "Alignment ID", by.y = "Alignment_ID")
+ref2 <- merge(SMALLNEG, AvC$NEG, by.x = "Alignment ID", by.y = "Alignment_ID")
+ref3 <- rbind(ref1,ref2)
+```
+
+```{r}
+MUT1 <- merge(SMALLPOS, BvD$POS, by.x = "Alignment ID", by.y = "Alignment_ID")
+MUT2 <- merge(SMALLNEG, BvD$NEG, by.x = "Alignment ID", by.y = "Alignment_ID")
+MUT3 <- rbind(MUT1,MUT2)
+```
+
+
+```{r}
 both <- rbind(log3, PDS3)
 ```
 
@@ -169,6 +182,10 @@ metab_names_log <- get_unique_metab_names(log3)
 metab_names_PDS <- get_unique_metab_names(PDS3)
 ```
 
+```{r}
+metab_names_ref <- get_unique_metab_names(ref3)
+metab_names_MUT <- get_unique_metab_names(MUT3)
+```
 
 ```{r}
 yeast9compounds <- read_xlsx("./data/db/yeast-GEM.xlsx", sheet = "METS")
@@ -178,6 +195,11 @@ yeast9keggs <- str_split_fixed(str_split_fixed( yeast9compounds$MIRIAM, ";",5) %
 ```{r}
 log_RDS50_final <- merge(all_metab %>% dplyr::select(Query, KEGG), metab_names_log, by.x = "Query", by.y = "Metabolite name") %>% subset(KEGG %in% yeast9keggs)
 PDS_RDS50_final <- merge(all_metab %>% dplyr::select(Query, KEGG), metab_names_PDS, by.x = "Query", by.y = "Metabolite name") %>% subset(KEGG %in% yeast9keggs)
+```
+
+```{r}
+ref_RDS50_final <- merge(all_metab %>% dplyr::select(Query, KEGG), metab_names_ref, by.x = "Query", by.y = "Metabolite name") %>% subset(KEGG %in% yeast9keggs)
+MUT_RDS50_final <- merge(all_metab %>% dplyr::select(Query, KEGG), metab_names_MUT, by.x = "Query", by.y = "Metabolite name") %>% subset(KEGG %in% yeast9keggs)
 ```
 
 ```{r}
@@ -263,23 +285,27 @@ addWorksheet(wb, "POS")
 addWorksheet(wb, "NEG")
 writeData(wb, "POS", ALLPO, keepNA = T)
 writeData(wb, "NEG", ALLNE, keepNA = T)
-saveWorkbook(wb, file = "../out/Tables/S_table_3_1.xlsx")
+saveWorkbook(wb, file = "../results/Tables/metabolite_data.xlsx")
 ```
 
 ```{r}
 # S table 3.2 - Univariate stat analysis
 wb <- createWorkbook()
-addWorksheet(wb, "Glucose_phase")
-addWorksheet(wb, "Ethanol_phase")
-writeData(wb, "Glucose_phase", log_RDS50_final, keepNA = T)
-writeData(wb, "Ethanol_phase", PDS_RDS50_final, keepNA = T)
-saveWorkbook(wb, file = "../out/Tables/S_table_3_2.xlsx")
+addWorksheet(wb, "MUT.v.REF_gluc_met")
+addWorksheet(wb, "MUT.v.REF_etoh_met")
+addWorksheet(wb, "etoh.v.gluc_REF_met")
+addWorksheet(wb, "etoh.v.gluc_MUT_met")
+writeData(wb, "MUT.v.REF_gluc_met", log_RDS50_final %>% subset(p<0.1), keepNA = T)
+writeData(wb, "MUT.v.REF_etoh_met", PDS_RDS50_final %>% subset(p<0.1), keepNA = T)
+writeData(wb, "etoh.v.gluc_REF_met", ref_RDS50_final %>% subset(p<0.1), keepNA = T)
+writeData(wb, "etoh.v.gluc_MUT_met", MUT_RDS50_final %>% subset(p<0.1), keepNA = T)
+saveWorkbook(wb, file = "../results/Tables/sig_abundance_metabolites.xlsx")
 ```
 
 ```{r}
 # S table 4.1 (metabolomics)
 
-wb <- loadWorkbook(file = "../out/Tables/S_table_4_1.xlsx")
+wb <- loadWorkbook(file = "../results/Tables/prediction_vs_empirical_data.xlsx")
 
 for (i in 1:length(hypothesis_gluc_metab)) {
   writeData(wb, "Glucose_phase_metabolomics", names(hypothesis_gluc_metab)[i], startCol=7*i-6)
@@ -297,7 +323,7 @@ for (i in 1:length(hypothesis_etoh_metab)) {
   }
 }
 
-saveWorkbook(wb, "../out/Tables/S_table_4_1.xlsx", overwrite = T)
+saveWorkbook(wb, "../results/Tables/prediction_vs_empirical_data.xlsx", overwrite = T)
 ```
 
 ```{r}
@@ -305,19 +331,19 @@ saveWorkbook(wb, "../out/Tables/S_table_4_1.xlsx", overwrite = T)
 wb <- loadWorkbook(file = "../out/Tables/S_table_5.xlsx")
 writeData(wb, "Glucose_phase_FELLA",tab.all1, keepNA = T)
 writeData(wb, "Ethanol_phase_FELLA",tab.all2, keepNA = T)
-saveWorkbook(wb, "../out/Tables/S_table_5.xlsx", overwrite = T)
+saveWorkbook(wb, "../out/Tables/exploratory_enrichment.xlsx", overwrite = T)
 ```
 
 ```{r}
 ggsave(fig2b,
-       filename="../out/Figures/Fig_2B.pdf",
+       filename="../results/Figures/Fig_2B.pdf",
        device = "pdf",
        height = 5, width =11.5, units = "in")
 ```
 
 ```{r}
 set.seed(20120)
-pdf(file = "../out/Figures/Fig_2D.pdf")
+pdf(file = "../results/Figures/Fig_2D.pdf")
 plot(analysis.ds2,method = "diffusion", data = fella.data, nlimit = nlimit, vertex.label.cex = vertex.label.cex, threshold = 0.05,vertex.size=30)
 dev.off()
 ```

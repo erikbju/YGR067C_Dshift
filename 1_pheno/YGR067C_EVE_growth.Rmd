@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse,warn.conflicts = F)
 library(ggplot2,warn.conflicts = F)
 library(zoo)
-library(svglite)
+library(reshape2)
 ```
 
 
@@ -164,12 +164,12 @@ MaxOD_perm_test_plot
 wb <- createWorkbook()
 addWorksheet(wb, "Growth_data")
 writeData(wb, "Growth_data", growth_data, keepNA = T)
-saveWorkbook(wb, "../out/Tables/S_table_1.xlsx")
+saveWorkbook(wb, "../results/Tables/growth_data.xlsx")
 ```
 
 ```{r}
 ggsave(sp,
-       filename="../out/Figures/Fig_2A.pdf",
+       filename="../results/Figures/Fig_2A.pdf",
        device = "pdf",
        height = 5, width = 12, units = "in")
 ```
